@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#101a2d" />
+    <title>MBTI Architecture Lab</title>
+    <link rel="icon" href="data:," />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <button class="brand" id="brandButton" aria-label="回到開始頁">
+          <span class="brand-mark">M/</span>
+          <span class="brand-copy">
+            <strong>MBTI Architecture Lab</strong>
+            <small>24 facets · 8 poles · 4 contexts</small>
+          </span>
+        </button>
+        <div class="topbar-meta">
+          <span class="version-chip">SCORING <b>v1.0</b></span>
+          <span class="saved-state" id="savedState">尚未開始</span>
+        </div>
+      </header>
+
+      <main id="app" tabindex="-1"></main>
+
+      <footer class="footer">
+        <span>© 2026 MBTI Architecture Lab</span>
+        <span>回答只影響你的測量結果，不構成診斷。</span>
+      </footer>
+    </div>
+    <script src="app.js" defer></script>
+  </body>
+</html>

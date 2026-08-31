@@ -1,0 +1,1721 @@
+# 新一代 MBTI 測量系統｜可直接建立版 v1
+
+## 1. 系統最核心的設計
+
+不要直接測：
+
+* E / I
+* S / N
+* T / F
+* J / P
+
+而是先測 24 個更細的人格機制，再組合成八個 pole，最後才轉換為四組 MBTI 偏好。
+
+整個架構：
+
+**80 個核心題目**
+
+→ **24 個 facet**
+
+→ **8 個獨立 pole strength**
+
+→ **4 個 relative preference**
+
+→ **4 組 integration / conflict / context sensitivity**
+
+→ **最佳 MBTI 類型**
+
+→ **最多 8 題動態確認題**
+
+因此完整測驗最多約 **88 題**。
+
+---
+
+# 2. 24 個底層 Facets
+
+## E — Extraverted Orientation
+
+### E1｜Social Initiation
+
+是否自然主動啟動互動。
+
+不是測「社交能力」。
+
+測：
+
+> 沒有外在要求時，是否自然產生與別人互動的行動。
+
+### E2｜External Processing
+
+是否透過說話、討論、互動形成想法。
+
+不是測愛不愛聊天。
+
+核心問題：
+
+> 思考完成以前，互動本身是不是思考的一部分？
+
+### E3｜External Stimulation
+
+是否傾向透過外部刺激提高精神活躍程度。
+
+例如：
+
+人群、環境變化、活動、即時互動。
+
+---
+
+# I — Introverted Orientation
+
+### I1｜Solitary Recovery
+
+獨處是否自然恢復精神資源。
+
+### I2｜Internal Processing
+
+是否傾向先在內部形成完整想法再表達。
+
+### I3｜Internal Absorption
+
+是否容易長時間沉浸於內部思想、興趣、想像或分析。
+
+---
+
+# S — Concrete Information Orientation
+
+### S1｜Concrete Evidence Priority
+
+面對未知問題時，是否自然先尋找可直接確認的資訊。
+
+### S2｜Detail Registration
+
+是否自然注意具體差異、細節、異常與實際資訊。
+
+### S3｜Experience Anchoring
+
+是否偏好從已知案例、經驗、方法及實證開始理解問題。
+
+---
+
+# N — Abstract Information Orientation
+
+### N1｜Abstraction
+
+是否自然把大量資訊濃縮成原理、模型、概念。
+
+### N2｜Pattern Linking
+
+是否自然跨資訊建立關聯與模式。
+
+### N3｜Possibility Generation
+
+面對資訊不足時，是否自然產生多種可能解釋、方向或未來情境。
+
+---
+
+# T — Analytical Decision Orientation
+
+### T1｜Logical Consistency
+
+判斷時是否高度重視邏輯一致性。
+
+### T2｜Impersonal Criteria
+
+是否能自然把「誰受到影響」暫時抽離，先以一般性標準判斷。
+
+### T3｜Trade-off Analysis
+
+是否自然把問題拆成成本、收益、因果及取捨。
+
+---
+
+# F — Value / Human Decision Orientation
+
+### F1｜Value Alignment
+
+決策是否自然考慮「這跟我/我們重視的價值是否一致」。
+
+### F2｜Human Impact Weighting
+
+不同方案產生不同人際影響時，是否自然將此資訊放入主要決策模型。
+
+### F3｜Perspective Integration
+
+是否自然模擬不同人的感受、需求與觀點，再形成判斷。
+
+注意：
+
+F 不等於情緒化。
+
+T 不等於理性。
+
+兩者都是不同的 **decision-information weighting mechanism**。
+
+---
+
+# J — Structure Orientation
+
+### J1｜Closure Preference
+
+資訊已足夠時，是否自然希望形成決定、結束懸而未決狀態。
+
+### J2｜Pre-structuring
+
+開始行動以前，是否自然建立框架、順序或安排。
+
+### J3｜Commitment Stability
+
+形成合理決定後，是否傾向穩定執行而不是持續重新打開選項。
+
+---
+
+# P — Adaptive Exploration Orientation
+
+### P1｜Option Preservation
+
+是否自然保留替代方案及未來改變的可能。
+
+### P2｜Live Updating
+
+新資訊出現時，是否非常自然地重新調整原有安排。
+
+### P3｜Exploratory Action
+
+資訊尚未完整時，是否偏好先探索、嘗試，再從結果形成方向。
+
+---
+
+# 3. 絕對不能把對立 Pole 當成完全相反
+
+這是整套系統的重要差異。
+
+不要設定：
+
+$$
+E + I = 100
+$$
+
+而是分別計算：
+
+$$
+E = 0-100
+$$
+
+$$
+I = 0-100
+$$
+
+所以一個人可能：
+
+> E = 81
+> I = 76
+
+代表：
+
+**外部互動能力與內部沉浸能力都非常高。**
+
+另一個人可能：
+
+> E = 32
+> I = 35
+
+雖然 E/I 差距同樣很小，但人格結構完全不同。
+
+同理：
+
+T/F、
+
+S/N、
+
+J/P
+
+全部獨立計算。
+
+---
+
+# 4. 80 題架構
+
+## Part A｜48 題 Behavioral Evidence
+
+24 facets × 每 facet 2 題。
+
+目的：
+
+測「實際自然行為」。
+
+不要寫：
+
+> 我是一個有創意的人。
+
+應該寫：
+
+> 過去一個月，遇到一個資訊不完整的新問題時，你有多常在查完所有資料以前就已經想到數種可能解釋？
+
+回答：
+
+1. 幾乎沒有
+2. 少數情況
+3. 約一半
+4. 多數情況
+5. 幾乎每次
+
+計分：
+
+$$
+-2,-1,0,+1,+2
+$$
+
+---
+
+# 5. Behavioral Item 的固定模板
+
+每一題必須包含：
+
+### ① Context
+
+例如：
+
+> 當你第一次遇到陌生問題時……
+
+### ② Observable behavior
+
+例如：
+
+> 你是否會先建立幾個可能的整體解釋？
+
+### ③ Time / frequency anchor
+
+例如：
+
+> 回想最近十次類似情況……
+
+因此：
+
+不要：
+
+> 我喜歡規劃。
+
+改成：
+
+> 回想最近幾次沒有明確流程的重要任務，在真正開始執行以前，你通常多常先決定主要步驟或順序？
+
+---
+
+# 6. Part B｜16 題 Forced Choice
+
+四條 MBTI 軸各四題。
+
+但這些題**不測 pole strength**。
+
+它們專門測：
+
+> 當兩種合理方法產生 trade-off 時，你自然優先哪一種？
+
+例如 S/N：
+
+> 你剛接手一個完全陌生的問題，而且只能先進行其中一件事。
+
+A：
+
+> 先收集幾個真實案例，了解實際發生過什麼。
+
+B：
+
+> 先建立一個可能解釋整體問題的模型，再決定需要收集什麼資料。
+
+回答：
+
+* 明顯 A
+* 稍微 A
+* 沒有明顯偏好
+* 稍微 B
+* 明顯 B
+
+計分：
+
+$$
+-2,-1,0,+1,+2
+$$
+
+---
+
+# 7. Forced Choice 最重要的原則
+
+A 和 B 必須：
+
+* 都聰明
+* 都合理
+* 都可能成功
+* 都有優點
+* 都有缺點
+* social desirability 接近
+
+絕對禁止：
+
+A：
+
+> 理性分析。
+
+B：
+
+> 被情緒控制。
+
+這根本不是人格題。
+
+---
+
+# 8. Part C｜16 題 Situational / Context Questions
+
+四軸各四題。
+
+目的不是再問一次偏好。
+
+而是測：
+
+> 人格在真實約束下如何表現。
+
+例如 T/F：
+
+> 你負責決定一個團隊流程。方案 A 效率明顯比較高，但會讓兩名成員承受長期額外壓力。方案 B 效率較低，但負擔較平均。
+
+不要問：
+
+> 你支持 A 還是 B？
+
+而問：
+
+> 你形成決定時，最先需要確認什麼？
+
+A：
+
+> 效率差異究竟有多大，以及是否存在更好的第三種配置。
+
+B：
+
+> 額外負擔對相關成員實際造成什麼影響，以及這個影響是否可接受。
+
+兩個都合理。
+
+真正測的是：
+
+**第一個被加入決策模型的資訊是什麼。**
+
+---
+
+# 9. 四種 Context
+
+16 個 scenario 分成四種環境：
+
+### Context 1｜自由探索
+
+沒有明顯風險或時間壓力。
+
+### Context 2｜責任環境
+
+結果會影響其他人或重要成果。
+
+### Context 3｜時間壓力
+
+必須快速形成選擇。
+
+### Context 4｜不確定環境
+
+資訊不完整、沒有標準答案。
+
+如此可以產生簡單的 Context Map。
+
+---
+
+# 10. 每一題需要儲存的 Metadata
+
+資料庫中每一題至少有：
+
+```text
+item_id
+
+format
+behavior / forced_choice / scenario
+
+axis
+EI / SN / TF / JP
+
+primary_pole
+
+facet
+
+context
+
+direction
+
+scoring_key
+
+mirror_group
+
+active
+```
+
+例如：
+
+```text
+item_id: N3_B_02
+format: behavior
+axis: SN
+primary_pole: N
+facet: N3
+context: uncertainty
+direction: positive
+```
+
+不要把計分資訊寫死在前端。
+
+---
+
+# 11. Facet Score
+
+Behavioral 題主要決定 facet strength。
+
+假設某 facet 有兩題：
+
+$$
+x_1,x_2 \in [-2,2]
+$$
+
+則：
+
+$$
+FacetRaw=\frac{x_1+x_2}{2}
+$$
+
+轉成 0–100：
+
+$$
+FacetScore
+=
+50+25(FacetRaw)
+$$
+
+所以：
+
+* -2 → 0
+* -1 → 25
+* 0 → 50
+* +1 → 75
+* +2 → 100
+
+---
+
+# 12. Pole Score
+
+例如 E：
+
+$$
+E=
+\frac{E1+E2+E3}{3}
+$$
+
+I：
+
+$$
+I=
+\frac{I1+I2+I3}{3}
+$$
+
+同樣計算：
+
+S、N、T、F、J、P。
+
+最後得到：
+
+```text
+E 74
+I 61
+
+S 42
+N 81
+
+T 83
+F 69
+
+J 48
+P 77
+```
+
+這八個分數是人格報告最重要的一層。
+
+---
+
+# 13. Relative Preference
+
+再計算每組差值。
+
+例如：
+
+$$
+R_{EI}
+=
+\frac{E-I}{100}
+$$
+
+因此：
+
+$$
+R\in[-1,1]
+$$
+
+如果 E = 80，I = 40：
+
+$$
+R_{EI}=0.40
+$$
+
+如果 E = 45，I = 75：
+
+$$
+R_{EI}=-0.30
+$$
+
+---
+
+# 14. Forced Choice Score
+
+EI 四題：
+
+$$
+FC_{EI}
+=
+\frac{\sum answer}{4\times2}
+$$
+
+因此結果也是：
+
+$$
+[-1,1]
+$$
+
+例如：
+
+$$
+FC_{EI}=+0.375
+$$
+
+代表 Forced Choice 較支持 E。
+
+---
+
+# 15. Scenario Score
+
+同樣：
+
+$$
+SC_{EI}
+=
+\frac{\sum answer}{4\times2}
+$$
+
+結果：
+
+$$
+[-1,1]
+$$
+
+---
+
+# 16. 最終 Axis Score
+
+現在不要使用複雜模型。
+
+直接使用三種不同證據來源：
+
+$$
+Axis=
+0.40R+
+0.30FC+
+0.30SC
+$$
+
+所以：
+
+### 40%
+
+實際行為傾向
+
+### 30%
+
+真正 trade-off 時的選擇
+
+### 30%
+
+具體情境決策
+
+這樣一個人不能只靠：
+
+> 「我覺得自己是 INTJ。」
+
+控制整份測驗。
+
+---
+
+# 17. Letter 判斷
+
+不要使用：
+
+> 只要 50.1% 就是 E。
+
+設定 ambiguity zone。
+
+例如：
+
+$$
+Axis > +0.15
+$$
+
+第一個字母。
+
+$$
+Axis < -0.15
+$$
+
+第二個字母。
+
+$$
+-0.15\le Axis\le0.15
+$$
+
+輸出：
+
+**X**
+
+例如：
+
+```text
+EI = +0.08
+SN = +0.52
+TF = +0.39
+JP = -0.44
+```
+
+得到：
+
+> XNTP
+
+而不是硬說 ENTP。
+
+---
+
+# 18. 但產品仍可提供「Best-fit 16 Type」
+
+很多使用者一定想知道 16 型。
+
+所以同時輸出：
+
+### Precision Type
+
+> XNTP
+
+### Best-fit MBTI
+
+> ENTP
+
+### Boundary warning
+
+> E/I 接近，目前沒有明顯單側偏好。
+
+這比假裝極度確定更好。
+
+---
+
+# 19. 強度不要叫 percentage
+
+不要：
+
+> 你 81% Introverted。
+
+改成：
+
+> Introverted Orientation：81 / 100
+
+代表：
+
+**這個人格模式在你的回答中出現得多強。**
+
+不是：
+
+> 你有 81% 的人格是 I。
+
+---
+
+# 20. 四種 Axis Profile
+
+除了字母，每條軸都分類。
+
+假設兩 pole 是 A/B。
+
+## Polarized
+
+例如：
+
+> N 84
+> S 31
+
+清楚偏向一側。
+
+---
+
+## Dual High
+
+例如：
+
+> T 82
+> F 78
+
+代表兩種模式都強。
+
+不是：
+
+> T/F 不確定。
+
+---
+
+## Dual Low
+
+例如：
+
+> E 32
+> I 29
+
+代表兩種典型模式都不特別突出。
+
+---
+
+## Balanced
+
+例如：
+
+> J 58
+> P 61
+
+兩者相近。
+
+---
+
+# 21. Integration Score
+
+直接計算：
+
+$$
+Integration(A,B)=min(A,B)
+$$
+
+例如：
+
+T = 86
+
+F = 76
+
+則：
+
+$$
+TFIntegration=76
+$$
+
+代表：
+
+這個人有很大的可能同時使用兩種 decision mode。
+
+同理可以得到：
+
+### E/I
+
+Social–Solitary Range
+
+### S/N
+
+Precision–Abstraction Range
+
+### T/F
+
+Logic–Value Integration
+
+### J/P
+
+Structure–Adaptability Range
+
+---
+
+# 22. Polarization
+
+再計算：
+
+$$
+Polarization=|A-B|
+$$
+
+例如：
+
+N = 87
+
+S = 31
+
+$$
+Polarization=56
+$$
+
+代表明顯單側 preference。
+
+---
+
+# 23. Activity Level
+
+另外保存：
+
+$$
+Activity=\frac{A+B}{2}
+$$
+
+例如：
+
+Person A：
+
+> T 80 / F 80
+
+Activity：
+
+80
+
+Person B：
+
+> T 30 / F 30
+
+Activity：
+
+30
+
+兩者都「50/50」。
+
+但人格結構完全不同。
+
+這就是為什麼一定要保存八個 pole。
+
+---
+
+# 24. 動態確認系統
+
+測完 80 題之後，系統檢查四條軸。
+
+只有兩種情況才增加題目。
+
+### 情況 A：Boundary
+
+例如：
+
+$$
+|Axis|<0.15
+$$
+
+### 情況 B：Measurement disagreement
+
+例如：
+
+Behavior：
+
+> E
+
+Forced Choice：
+
+> I
+
+Scenario：
+
+> I
+
+這時不要直接平均。
+
+觸發 diagnostic question。
+
+---
+
+# 25. 最多增加 8 題
+
+每一條 axis：
+
+最多追加兩題。
+
+因此：
+
+$$
+80+8=88
+$$
+
+絕不無限詢問。
+
+---
+
+# 26. Dynamic Probe 應該問什麼
+
+不是再問：
+
+> 你喜歡社交嗎？
+
+而是找造成矛盾的原因。
+
+例如 E/I：
+
+> 和非常熟悉的三、四個人在一起數小時後，你通常比較接近哪個狀態？
+
+再問：
+
+> 如果換成不熟悉的十多人呢？
+
+可能得到：
+
+```text
+熟人小群體：E
+陌生大型群體：I
+```
+
+這不是 inconsistency。
+
+這是：
+
+**context sensitivity。**
+
+---
+
+# 27. Context Sensitivity
+
+每條軸建立：
+
+$$
+ContextSensitivity
+$$
+
+簡單第一版不用複雜統計。
+
+計算同一軸在不同 scenario context 中的最大差異。
+
+例如：
+
+```text
+Normal      E +0.42
+Pressure    I -0.11
+Social      E +0.61
+Uncertainty I -0.06
+```
+
+Context Sensitivity 高。
+
+報告：
+
+> 你的 E/I 表現高度受到環境影響。
+
+而不是：
+
+> 你的回答不一致。
+
+---
+
+# 28. Response Quality
+
+不要做「測謊分數」。
+
+建立：
+
+### Consistency
+
+相同心理機制的不同表述是否大致一致。
+
+### Attention
+
+是否出現大量完全相同選項。
+
+### Speed anomaly
+
+如果整題瞬間回答，可以降低結果信心。
+
+但：
+
+**絕對不能因為快就扣人格分。**
+
+只影響：
+
+> Result Confidence。
+
+---
+
+# 29. Mirror Items
+
+48 題 behavioral 題裡，可以選 8 題形成 4 組 mirror pair。
+
+例如原題：
+
+> 面對陌生問題時，我常在資料完整以前形成數種可能解釋。
+
+mirror：
+
+> 在沒有足夠具體資料以前，我通常不太願意建立整體解釋。
+
+兩題隔很遠。
+
+不要連續出現。
+
+---
+
+# 30. Result Confidence
+
+不要聲稱：
+
+> 92% 科學準確。
+
+第一版只建立：
+
+### High
+
+* 主要證據來源方向一致
+* mirror consistency 高
+* 題目完整完成
+
+### Medium
+
+有一部分 channel disagreement。
+
+### Low
+
+多條 axis 存在明顯矛盾或大量 boundary。
+
+名稱叫：
+
+> **Measurement Confidence**
+
+而不是：
+
+> Accuracy。
+
+---
+
+# 31. 最終結果頁順序
+
+## 第一層
+
+# Best-fit Type
+
+例如：
+
+> **ENTP**
+
+下面立即顯示：
+
+> Precision profile: XNTP
+
+> Measurement confidence: Medium–High
+
+---
+
+# 32. 第二層：八 Pole
+
+例如：
+
+```text
+External Orientation       72
+Internal Orientation       64
+
+Concrete Orientation       38
+Abstract Orientation       84
+
+Analytical Orientation     81
+Value/Human Orientation    73
+
+Structure Orientation      43
+Adaptive Orientation       79
+```
+
+這比單純四個 percentage 重要得多。
+
+---
+
+# 33. 第三層：24 Facets
+
+例如 N：
+
+### Abstract Orientation 84
+
+Abstraction
+89
+
+Pattern Linking
+82
+
+Possibility Generation
+81
+
+使用者第一次可以知道：
+
+> 自己為什麼會被判斷為 N。
+
+---
+
+# 34. 第四層：Axis Architecture
+
+例如：
+
+## T/F
+
+T = 81
+
+F = 73
+
+Relative preference：
+
+> Moderate T
+
+Integration：
+
+> Very High
+
+解讀：
+
+> 你並不是「邏輯高、人際低」的典型單側模式。你的回答顯示，你會高度使用邏輯一致性與因果分析，同時也會把價值與他人影響納入主要決策過程。
+
+這比：
+
+> Thinking 54%
+
+有意義很多。
+
+---
+
+# 35. 第五層：Context Map
+
+例如：
+
+```text
+                 EI    SN    TF    JP
+
+自由探索          E     N    T/F   P
+責任環境          I     S/N  T     J
+時間壓力          I     S    T     J
+高度不確定        E/I   N    T     P
+```
+
+直接讓使用者看到：
+
+> 人格不是每個場合完全相同。
+
+---
+
+# 36. 第六層：Most Distinctive Traits
+
+不要使用 generic MBTI description。
+
+直接根據最高 facet 生成。
+
+例如：
+
+> 你的三個最突出模式：
+
+1. Possibility Generation
+2. Logical Consistency
+3. Adaptive Updating
+
+再根據組合產生真正個人化解讀。
+
+---
+
+# 37. 描述生成規則
+
+AI 可以負責文字。
+
+但 AI **不能決定分數**。
+
+演算法先產生 JSON：
+
+```json
+{
+  "best_fit": "ENTP",
+  "precision_type": "XNTP",
+  "poles": {
+    "E": 72,
+    "I": 64,
+    "S": 38,
+    "N": 84,
+    "T": 81,
+    "F": 73,
+    "J": 43,
+    "P": 79
+  }
+}
+```
+
+AI 只能根據結果解釋。
+
+不能：
+
+> 「看起來這個人其實更像 INTP，所以幫他改掉。」
+
+---
+
+# 38. AI Prompt 必須限制
+
+例如：
+
+> 僅根據提供的人格數據進行解釋。
+> 不重新分類類型。
+> 不推斷精神疾病、智商、創傷、政治立場、性格優劣。
+> 不使用與數據衝突的 MBTI stereotypes。
+> 對 dual-high、boundary 和 context-dependent traits 必須明確說明。
+
+---
+
+# 39. 題目最重要的禁止規則
+
+## 禁止 Identity Questions
+
+不要：
+
+> 我是一個內向的人。
+
+---
+
+## 禁止 Social Stereotypes
+
+不要：
+
+> 我喜歡派對。
+
+派對喜好不是 E/I 本身。
+
+---
+
+## 禁止 Intelligence Confound
+
+不要：
+
+> 我喜歡研究深奧理論。
+
+可能只是教育背景或興趣。
+
+---
+
+## 禁止 Emotion vs Logic
+
+不要：
+
+> 我通常靠感情而不是理性。
+
+這是一題垃圾 T/F 題。
+
+---
+
+## 禁止 Productivity Confound
+
+不要：
+
+> 我總是準時完成工作。
+
+這不是純 J。
+
+---
+
+## 禁止 Disorder Confound
+
+不要把：
+
+拖延、
+
+注意力問題、
+
+社交焦慮、
+
+強迫、
+
+完美主義
+
+直接轉換成 MBTI。
+
+---
+
+# 40. 題目不能有正確答案
+
+看到題目時，使用者不應立即知道：
+
+> 哪個答案比較成熟。
+
+例如：
+
+錯：
+
+A 我會冷靜分析。
+
+B 我會衝動行事。
+
+正確：
+
+A 優先把決策標準固定下來。
+
+B 優先保持方案可以隨新資訊調整。
+
+兩者都有合理性。
+
+---
+
+# 41. 不要用大量反向題
+
+傳統測驗很愛：
+
+> 我喜歡規劃。
+
+然後：
+
+> 我不喜歡規劃。
+
+這只是語言翻轉。
+
+不是新的 measurement evidence。
+
+真正 mirror item 必須換：
+
+* context
+* behavioral manifestation
+* decision trade-off
+
+而不是單純加一個「不」。
+
+---
+
+# 42. 不要讓使用者知道題目在測什麼
+
+題目不要標：
+
+> E/I 第 3 題。
+
+全部混合排列。
+
+例如：
+
+N
+
+→ F
+
+→ I
+
+→ J
+
+→ T
+
+→ E
+
+讓使用者不能刻意維持：
+
+> 「我要答成 INTJ。」
+
+---
+
+# 43. 題序也要混合
+
+但不要純 random。
+
+避免：
+
+同一 facet 連續。
+
+mirror items 距離至少 15–20 題。
+
+四軸平均分布。
+
+scenario 分散。
+
+---
+
+# 44. 用「最近真實行為」取代「理想自我」
+
+優先：
+
+> 最近十次……
+
+> 過去一個月……
+
+> 最近一次……
+
+次選：
+
+> 如果你現在遇到……
+
+最少使用：
+
+> 你覺得自己通常是一個……
+
+---
+
+# 45. 每一個 Facet 的兩題不能問同一件事
+
+例如 N3 Possibility Generation：
+
+題 A：
+
+未知問題。
+
+題 B：
+
+未來規劃。
+
+不能：
+
+題 A：
+
+我經常想到很多可能性。
+
+題 B：
+
+我很容易想到很多不同可能性。
+
+這是假題量。
+
+---
+
+# 46. 核心 scoring object
+
+後端最後保存：
+
+```text
+24 facet scores
+
+8 pole scores
+
+4 behavioral contrasts
+
+4 forced-choice contrasts
+
+4 scenario contrasts
+
+4 final axis scores
+
+4 integration scores
+
+4 polarization scores
+
+4 activity scores
+
+4 context sensitivity scores
+
+measurement confidence
+
+precision type
+
+best-fit type
+```
+
+---
+
+# 47. 不要只儲存最後的 MBTI
+
+每一個 response 都保存。
+
+例如：
+
+```text
+user_id
+item_id
+answer
+response_time
+timestamp
+```
+
+以及 scoring version：
+
+```text
+scoring_version: 1.0
+```
+
+這很重要。
+
+因為之後任何計分規則更新，都能重新計算舊結果。
+
+---
+
+# 48. Scoring Engine 必須 Versioned
+
+不要修改公式以後直接覆蓋。
+
+使用：
+
+```text
+v1.0
+v1.1
+v2.0
+```
+
+每份報告知道：
+
+> 自己使用哪一套 scoring logic。
+
+---
+
+# 49. 類型演算法
+
+假設四個 axis：
+
+```text
+EI = +0.24
+SN = +0.52
+TF = +0.33
+JP = -0.41
+```
+
+定義：
+
+EI 正 → E
+
+SN 正 → N
+
+TF 正 → T
+
+JP 負 → P
+
+結果：
+
+> ENTP
+
+但 EI 如果：
+
+```text
++0.08
+```
+
+Precision：
+
+> XNTP
+
+Best-fit：
+
+> ENTP
+
+---
+
+# 50. 最後不要給一個「你就是這樣的人」
+
+報告語言全部使用：
+
+> 你的回答顯示……
+
+> 你目前呈現……
+
+> 相較另一種模式，你比較常……
+
+> 在這類情境中……
+
+不要：
+
+> ENTP 天生就是……
+
+因為整個系統核心就是：
+
+**測人，不是把人塞進 stereotype。**
+
+---
+
+# 最終產品架構
+
+整套產品可以直接做成：
+
+```text
+START
+│
+├─ 48 Behavioral Items
+│
+├─ 16 Forced-choice Items
+│
+├─ 16 Scenario Items
+│
+▼
+Initial Scoring
+│
+├─ 24 Facets
+├─ 8 Poles
+├─ 4 Axis Scores
+├─ Integration
+├─ Polarization
+├─ Context Sensitivity
+│
+▼
+Boundary / disagreement?
+│
+├─ NO → RESULT
+│
+└─ YES
+     │
+     └─ 最多 8 Dynamic Probe Items
+             │
+             ▼
+          Re-score
+             │
+             ▼
+           RESULT
+```
+
+---
+
+# 最終輸出
+
+使用者不是只得到：
+
+> ENTP
+
+而是得到：
+
+### Identity layer
+
+**Best-fit MBTI：ENTP**
+
+### Precision layer
+
+**XNTP**
+
+### Architecture layer
+
+```text
+E 72 / I 64
+S 38 / N 84
+T 81 / F 73
+J 43 / P 79
+```
+
+### Facet layer
+
+完整 24 facets。
+
+### Integration layer
+
+```text
+EI Range
+SN Integration
+TF Integration
+JP Integration
+```
+
+### Context layer
+
+不同環境的人格模式。
+
+### Confidence layer
+
+High / Medium / Low。
+
+---
+
+# 整套 v1 最重要的五個突破
+
+**第一：**
+不是四條 bipolar axis，而是八個獨立人格模式。
+
+**第二：**
+不是只問「你覺得自己是誰」，而是 Behavioral + Forced Choice + Scenario 三種證據。
+
+**第三：**
+不把 51/49 硬切類型，允許 X。
+
+**第四：**
+能識別 dual-high，例如同時高 T 與高 F。
+
+**第五：**
+矛盾回答不是直接視為錯誤，而是檢查是否存在 context-dependent personality。
+
+這就是我會真正直接建立的第一版核心。
