@@ -503,6 +503,7 @@ function renderQuiz() {
         <h2 class="question-title">${escapeHtml(item.stem)}</h2>
         ${item.format !== "behavior" ? `<p class="question-anchor choice-copy">${optionIntro}</p>` : `<p class="question-anchor">${escapeHtml(item.anchor)}</p>`}
         <div class="options" role="group" aria-label="回答選項">${options}</div>
+        <div class="quiz-foot"><button class="btn-quiet" id="prevButton" ${state.currentIndex === 0 ? "disabled" : ""}>← 上一題</button><span class="keyboard-note">可使用 1–5 選擇 · Enter 下一題</span><button class="btn-primary" id="nextButton">${state.currentIndex === total - 1 ? (state.probeMode ? "查看結果" : "完成核心測量") : "下一題 →"}</button></div>
       </article>
       <aside class="quiz-side">
         <div class="side-panel"><h2>Evidence mix</h2><p>每一軸都由三種證據組成。完成後系統才會計算 relative preference，不會由單題決定類型。</p></div>
@@ -510,7 +511,6 @@ function renderQuiz() {
         <div class="side-panel"><h2>Axis signal</h2><div class="axis-list">${renderLiveAxes()}</div></div>
       </aside>
     </div>
-    <div class="quiz-foot"><button class="btn-quiet" id="prevButton" ${state.currentIndex === 0 ? "disabled" : ""}>← 上一題</button><span class="keyboard-note">可使用 1–5 選擇 · Enter 下一題</span><button class="btn-primary" id="nextButton">${state.currentIndex === total - 1 ? (state.probeMode ? "查看結果" : "完成核心測量") : "下一題 →"}</button></div>
   </section>`;
   app.querySelectorAll(".option-btn").forEach((button) => button.addEventListener("click", () => answerCurrent(Number(button.dataset.value))));
   document.getElementById("nextButton").addEventListener("click", moveNext);
