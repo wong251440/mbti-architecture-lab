@@ -1,6 +1,6 @@
 /* MBTI Architecture Lab — versioned measurement prototype */
 const SCORING_VERSION = "1.0";
-const QUESTION_BANK_VERSION = "DCA-v1";
+const QUESTION_BANK_VERSION = "DCA-v1.1";
 const STORAGE_KEY = "mbti-architecture-lab-v1";
 
 const axisMeta = {
