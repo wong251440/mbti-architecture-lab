@@ -1,5 +1,6 @@
 /* MBTI Architecture Lab — versioned measurement prototype */
 const SCORING_VERSION = "1.0";
+const QUESTION_BANK_VERSION = "DCA-v1";
 const STORAGE_KEY = "mbti-architecture-lab-v1";
 
 const axisMeta = {
@@ -182,7 +183,137 @@ function makeItems() {
   return { behaviorItems, forcedItems, scenarioItems, probes };
 }
 
-const ITEM_BANK = makeItems();
+let ITEM_BANK = makeItems();
+
+function stripItemTag(text) {
+  return String(text || "").replace(/\s*（\s*(?:`?(?:function|facet|Pole|Tag)\b)[\s\S]*?）\s*$/, "").trim();
+}
+
+function contextBucket(meta) {
+  const source = `${meta.context_type || meta.context || ""} ${meta.pressure_level || ""}`.toLowerCase();
+  if (/responsibility|high_responsibility|interpersonal_conflict|high_responsibility/.test(source)) return "responsibility";
+  if (/pressure_time|pressure_social|crisis|environment_change|sunk_cost|conflict/.test(source) || meta.pressure_level === "high") return "pressure";
+  if (/free|baseline|peer_review|ideation|exploration|low/.test(source) && meta.pressure_level !== "high") return "free";
+  if (/responsibility|conflict|impact|social|energy/.test(source)) return "responsibility";
+  if (/uncertainty|unknown|ambiguous|change|pressure/.test(source)) return "uncertainty";
+  return meta.pressure_level === "high" ? "pressure" : "free";
+}
+
+function parseQuestionBank(markdown) {
+  const matches = [...markdown.matchAll(/```json\s*([\s\S]*?)\s*```/g)];
+  const records = matches.map((match, index) => {
+    const meta = JSON.parse(match[1]);
+    const start = match.index + match[0].length;
+    const end = index + 1 < matches.length ? matches[index + 1].index : markdown.length;
+    return { meta, section: markdown.slice(start, end) };
+  });
+  const behaviorItems = [];
+  const forcedItems = [];
+  const scenarioItems = [];
+  const costItems = [];
+  const probes = [];
+  records.forEach(({ meta, section }) => {
+    const base = {
+      item_id: meta.item_id,
+      module: meta.module,
+      axis: meta.axis || poleMeta[meta.pole]?.axis || null,
+      primary_pole: meta.pole || meta.pole_B || null,
+      facet: meta.facet || null,
+      context: contextBucket(meta),
+      context_type: meta.context_type || meta.context || meta.cost_type || meta.probe_type || null,
+      direction: 1,
+      mirror_group: null,
+      scoring_key: meta.scoring_key || null,
+      active: true,
+      raw_metadata: meta
+    };
+    if (meta.module === "A") {
+      const stem = section.match(/\*\*題目\*\*：([^\n]+)/)?.[1]?.trim() || "";
+      behaviorItems.push({ ...base, format: "behavior", direction: 1, stem, anchor: "請根據最近真實經驗作答；[NA] 不計入分母與平均。", options: [
+        { key: "NA", label: "不適用 / 無相關經驗", value: null },
+        { key: "0", label: "幾乎沒有", value: 0 },
+        { key: "1", label: "少數情況", value: 1 },
+        { key: "2", label: "約一半情況", value: 2 },
+        { key: "3", label: "多數情況", value: 3 },
+        { key: "4", label: "幾乎每次", value: 4 }
+      ] });
+      return;
+    }
+    if (meta.module === "B") {
+      const stem = section.match(/\*\*情境\*\*：([^\n]+)/)?.[1]?.trim() || "";
+      const options = [...section.matchAll(/^\*\s+\*\*選項\s+([AB])\*\*：([^\n]+)/gm)].map((match) => ({ key: match[1], label: stripItemTag(match[2]), value: match[1] === "A" ? -2 : 2 }));
+      const axis = meta.axis;
+      const direction = axisMeta[axis]?.positive === meta.pole_B ? 1 : -1;
+      forcedItems.push({ ...base, format: "forced_choice", primary_pole: meta.pole_B, pole_A: meta.pole_A, pole_B: meta.pole_B, direction, stem, optionA: options[0]?.label || "", optionB: options[1]?.label || "", anchor: "兩種方法都有優點，請以自然的取捨優先順序作答。", options: [
+        { key: "A", label: "強烈偏向 A", value: -2 },
+        { key: "B", label: "稍微偏向 A", value: -1 },
+        { key: "C", label: "無明顯偏向 / 兩者平衡", value: 0 },
+        { key: "D", label: "稍微偏向 B", value: 1 },
+        { key: "E", label: "強烈偏向 B", value: 2 }
+      ] });
+      return;
+    }
+    if (meta.module === "C") {
+      const stem = section.match(/\*\*情境主幹\*\*：([^\n]+)/)?.[1]?.trim() || "";
+      const stepOneText = section.split(/#####\s*Step 1：[^\n]*\n/)[1]?.split(/#####\s*Step 2：/)[0] || "";
+      const stepTwoText = section.split(/#####\s*Step 2：[^\n]*\n/)[1] || "";
+      const step1Options = [...stepOneText.matchAll(/^\*\s+\*\*([A-D])\*\*：([^\n]+)/gm)].map((match) => ({ key: match[1], label: stripItemTag(match[2]), function_tag: (match[2].match(/`function:\s*([^`]+)`/) || [])[1] || null }));
+      const step2Options = [...stepTwoText.matchAll(/^\*\s+\*\*([A-D])\*\*：([^\n]+)/gm)].map((match) => {
+        const facetMatch = match[2].match(/`facet:\s*([^`,]+)[^`]*`/);
+        const poleMatch = match[2].match(/`(?:facet:[^`]+,\s*)?pole:\s*([EIFSTJPN])`/);
+        return { key: match[1], label: stripItemTag(match[2]), facet: facetMatch?.[1]?.trim() || null, pole: poleMatch?.[1] || null };
+      });
+      const axis = meta.axis;
+      scenarioItems.push({ ...base, format: "micro_sim", primary_pole: axisMeta[axis]?.positive || meta.axis, direction: 1, stem, step1Options, step2Options, anchor: "先選第一個行動，再選最主要原因；兩個步驟都會納入測量。", options: [] });
+      return;
+    }
+    if (meta.module === "D") {
+      const stem = section.match(/\*\*題目\*\*：([^\n]+)/)?.[1]?.trim() || "";
+      const axis = poleMeta[meta.pole]?.axis;
+      costItems.push({ ...base, axis, format: "cost", primary_pole: meta.pole, direction: 1, stem, anchor: "得分越高，代表這個心理歷程對你而言認知成本越低。", options: [
+        { key: "1", label: "非常不符合", value: 1 },
+        { key: "2", label: "大致不符合", value: 2 },
+        { key: "3", label: "普通 / 視情況而定", value: 3 },
+        { key: "4", label: "大致符合", value: 4 },
+        { key: "5", label: "非常符合", value: 5 }
+      ] });
+      return;
+    }
+    if (meta.module === "PROBE") {
+      const stem = section.match(/\*\*題目\*\*：([^\n]+)/)?.[1]?.trim() || "";
+      const options = [...section.matchAll(/^\*\s+`\[([A-D])\]`\s+([^\n]+)/gm)].map((match) => {
+        const tagText = match[2];
+        const poleMatch = tagText.match(/`Pole:\s*([EIFSTJPN])/);
+        return { key: match[1], label: stripItemTag(tagText), pole: poleMatch?.[1] || null };
+      });
+      probes.push({ ...base, format: "probe", stem, anchor: "這是用來釐清情境依賴的確認題，不會單獨改寫你的整體結果。", options });
+    }
+  });
+  return { behaviorItems, forcedItems, scenarioItems, costItems, probes, coreItems: [...behaviorItems, ...forcedItems, ...scenarioItems, ...costItems], allItems: [...behaviorItems, ...forcedItems, ...scenarioItems, ...costItems, ...probes] };
+}
+
+async function hydrateQuestionBank() {
+  try {
+    const response = await fetch("題庫.txt", { cache: "no-store" });
+    if (!response.ok) throw new Error(`題庫載入失敗：${response.status}`);
+    const parsed = parseQuestionBank(await response.text());
+    if (parsed.behaviorItems.length !== 48 || parsed.forcedItems.length !== 12 || parsed.scenarioItems.length !== 12 || parsed.costItems.length !== 8 || parsed.probes.length !== 8) throw new Error("題庫數量不完整");
+    ITEM_BANK = parsed;
+    if (!state.itemOrder.length || state.questionBankVersion !== QUESTION_BANK_VERSION) {
+      state.itemOrder = [];
+      state.currentIndex = 0;
+      state.responses = {};
+      state.result = null;
+      state.initialScoring = null;
+      state.view = "intro";
+      state.probeMode = false;
+    }
+    state.questionBankVersion = QUESTION_BANK_VERSION;
+    render();
+  } catch (error) {
+    console.warn(error);
+  }
+}
 
 function seededShuffle(list, seed = 17) {
   const result = [...list];
@@ -199,21 +330,25 @@ function buildInitialOrder() {
   const behavior = seededShuffle(ITEM_BANK.behaviorItems, 29);
   const forced = seededShuffle(ITEM_BANK.forcedItems, 43);
   const scenario = seededShuffle(ITEM_BANK.scenarioItems, 71);
+  const cost = seededShuffle(ITEM_BANK.costItems || [], 89);
   const order = [];
-  let f = 0; let s = 0;
+  let f = 0; let s = 0; let d = 0;
   behavior.forEach((item, index) => {
     order.push(item);
-    if ((index + 1) % 3 === 0 && f < forced.length) order.push(forced[f++]);
-    if ((index + 1) % 3 === 2 && s < scenario.length) order.push(scenario[s++]);
+    if ((index + 1) % 4 === 3 && f < forced.length) order.push(forced[f++]);
+    if ((index + 1) % 4 === 2 && s < scenario.length) order.push(scenario[s++]);
+    if ((index + 1) % 6 === 1 && d < cost.length) order.push(cost[d++]);
   });
   while (f < forced.length) order.push(forced[f++]);
   while (s < scenario.length) order.push(scenario[s++]);
+  while (d < cost.length) order.push(cost[d++]);
   return order;
 }
 
 const state = {
   view: "intro",
   sessionId: `session-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  questionBankVersion: QUESTION_BANK_VERSION,
   itemOrder: [],
   currentIndex: 0,
   responses: {},
@@ -231,7 +366,12 @@ const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const avg = (values) => values.length ? values.reduce((a, b) => a + b, 0) / values.length : 0;
 const fmt = (value) => `${value >= 0 ? "+" : ""}${value.toFixed(2)}`;
-const responseValue = (response) => Number(response?.value ?? response?.answer ?? 0);
+const responseValue = (response) => {
+  if (!response) return null;
+  const raw = Object.prototype.hasOwnProperty.call(response, "value") ? response.value : response.answer;
+  return raw === null || raw === undefined ? null : Number(raw);
+};
+const isCompleteResponse = (item, response) => Boolean(response) && (item?.format !== "micro_sim" || (response.step1 && response.step2));
 
 function persist() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, view: state.view === "result" ? "result" : state.view }));
@@ -242,13 +382,14 @@ function restore() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (!saved || !saved.itemOrder?.length) return;
+    if (saved.questionBankVersion !== QUESTION_BANK_VERSION) return;
     Object.assign(state, saved);
     if (state.view === "quiz" && state.currentIndex >= state.itemOrder.length) state.currentIndex = state.itemOrder.length - 1;
   } catch (_) { /* ignore malformed local data */ }
 }
 
 function updateSavedState() {
-  const count = Object.keys(state.responses).length;
+  const count = state.itemOrder.filter((item) => isCompleteResponse(item, state.responses[item.item_id])).length;
   savedStateEl.textContent = count ? `${count} 題已保存` : "尚未開始";
 }
 
@@ -289,10 +430,22 @@ function fillDemo() {
   state.startedAt = Date.now() - 1000 * 60 * 18;
   state.responses = {};
   state.itemOrder.forEach((item, index) => {
-    const pattern = item.primary_pole === "N" || item.primary_pole === "T" || item.primary_pole === "P" ? 1 : (index % 4 === 0 ? 0 : -1);
-    const value = clamp(pattern + ((index % 5) - 2) * 0.22, -2, 2);
-    const demoValue = Math.round(value);
-    state.responses[item.item_id] = { user_id: state.sessionId, item_id: item.item_id, answer: demoValue, value: demoValue, responseTime: 5100 + (index % 5) * 740, timestamp: Date.now() - (state.itemOrder.length - index) * 9000, scoring_version: SCORING_VERSION };
+    const response = { user_id: state.sessionId, item_id: item.item_id, responseTime: 5100 + (index % 5) * 740, timestamp: Date.now() - (state.itemOrder.length - index) * 9000, scoring_version: SCORING_VERSION };
+    if (item.format === "micro_sim") {
+      response.step1 = item.step1Options[0]?.key || "A";
+      response.step2 = item.step2Options[0]?.key || "A";
+    } else if (item.format === "probe") {
+      response.answer = response.value = item.options[0]?.key || "A";
+    } else if (item.format === "cost") {
+      response.answer = response.value = 4;
+    } else if (item.format === "behavior") {
+      const demoValue = item.options[1 + (index % 5)]?.value ?? 2;
+      response.answer = response.value = demoValue;
+    } else {
+      const demoValue = index % 3 === 0 ? -2 : 2;
+      response.answer = response.value = demoValue;
+    }
+    state.responses[item.item_id] = response;
   });
   state.initialScoring = scoreAll(state.itemOrder, state.responses);
   state.result = state.initialScoring;
@@ -302,18 +455,24 @@ function fillDemo() {
   render();
 }
 
-function answerCurrent(value) {
+function answerCurrent(value, step = null) {
   const item = state.itemOrder[state.currentIndex];
   if (!item) return;
   const responseTime = Date.now() - (state.questionStartedAt || Date.now());
-  state.responses[item.item_id] = { user_id: state.sessionId, item_id: item.item_id, answer: value, value, responseTime, timestamp: Date.now(), scoring_version: SCORING_VERSION };
+  const previous = state.responses[item.item_id] || { user_id: state.sessionId, item_id: item.item_id, responseTime: 0, timestamp: Date.now(), scoring_version: SCORING_VERSION };
+  if (item.format === "micro_sim") {
+    const key = step === 1 ? "step1" : "step2";
+    state.responses[item.item_id] = { ...previous, [key]: value, responseTime: responseTime || previous.responseTime, timestamp: Date.now() };
+  } else {
+    state.responses[item.item_id] = { ...previous, answer: value, value, responseTime, timestamp: Date.now() };
+  }
   persist();
   render();
 }
 
 function moveNext() {
   const item = state.itemOrder[state.currentIndex];
-  if (!state.responses[item?.item_id]) return;
+  if (!isCompleteResponse(item, state.responses[item?.item_id])) return;
   if (state.currentIndex < state.itemOrder.length - 1) {
     state.currentIndex += 1;
     state.questionStartedAt = Date.now();
@@ -357,26 +516,31 @@ function finishCoreOrResult() {
 function scoreAll(items, responses) {
   const facetScores = {};
   facetMeta.forEach((facet) => {
-    const values = items.filter((item) => item.active && item.format === "behavior" && item.facet === facet.code && responses[item.item_id]).map((item) => responseValue(responses[item.item_id]) * item.direction);
-    facetScores[facet.code] = values.length ? Math.round(clamp(50 + 25 * avg(values), 0, 100)) : 50;
+    const values = items.filter((item) => item.active && item.format === "behavior" && item.facet === facet.code && responses[item.item_id] && responseValue(responses[item.item_id]) !== null).map((item) => responseValue(responses[item.item_id]));
+    facetScores[facet.code] = values.length ? Math.round(clamp((avg(values) / 4) * 100, 0, 100)) : 50;
   });
   const poleScores = {};
   Object.keys(poleMeta).forEach((pole) => {
     const facets = facetMeta.filter((facet) => facet.pole === pole).map((facet) => facetScores[facet.code]);
-    poleScores[pole] = Math.round(avg(facets));
+    const costItems = items.filter((item) => item.active && item.format === "cost" && item.primary_pole === pole && responses[item.item_id]);
+    const costScore = costItems.length ? avg(costItems.map((item) => responseValue(responses[item.item_id]) * 20)) : null;
+    const facetScore = avg(facets);
+    poleScores[pole] = Math.round(costScore === null ? facetScore : facetScore * 0.85 + costScore * 0.15);
   });
   const channels = {};
   Object.keys(axisMeta).forEach((axis) => {
     const fc = items.filter((item) => item.active && item.axis === axis && item.format === "forced_choice" && responses[item.item_id]).map((item) => responseValue(responses[item.item_id]) * item.direction / 2);
-    const sc = items.filter((item) => item.active && item.axis === axis && ["scenario", "probe"].includes(item.format) && responses[item.item_id]).map((item) => responseValue(responses[item.item_id]) * item.direction / 2);
-    const probe = items.filter((item) => item.active && item.axis === axis && item.format === "probe" && responses[item.item_id]).map((item) => responseValue(responses[item.item_id]) * item.direction / 2);
-    channels[axis] = { relative: (poleScores[axisMeta[axis].positive] - poleScores[axisMeta[axis].negative]) / 100, forced: avg(fc), scenario: avg(sc.filter((_, i) => i < sc.length - probe.length)) || 0, probe: avg(probe), scenarioWithProbe: avg(sc) };
+    const scenarioItems = items.filter((item) => item.active && item.axis === axis && item.format === "micro_sim" && isCompleteResponse(item, responses[item.item_id]));
+    const sc = scenarioItems.map((item) => microScenarioScore(item, responses[item.item_id]));
+    const probeItems = items.filter((item) => item.active && item.axis === axis && item.format === "probe" && responses[item.item_id]);
+    const probe = probeItems.map((item) => probeScore(item, responses[item.item_id]));
+    channels[axis] = { relative: (poleScores[axisMeta[axis].positive] - poleScores[axisMeta[axis].negative]) / 100, forced: avg(fc), scenario: avg(sc), probe: avg(probe), scenarioWithProbe: avg(sc) };
   });
   const axes = {};
   Object.keys(axisMeta).forEach((axis) => {
     const channel = channels[axis];
     const scenarioChannel = channel.probe ? (channel.scenario * 0.7 + channel.probe * 0.3) : channel.scenario;
-    axes[axis] = clamp(0.4 * channel.relative + 0.3 * channel.forced + 0.3 * scenarioChannel, -1, 1);
+    axes[axis] = clamp(0.5 * channel.relative + 0.3 * channel.forced + 0.2 * scenarioChannel, -1, 1);
   });
   const profiles = {};
   const architecture = {};
@@ -394,7 +558,7 @@ function scoreAll(items, responses) {
   Object.keys(axisMeta).forEach((axis) => {
     scenarioContext[axis] = {};
     ["free", "responsibility", "pressure", "uncertainty"].forEach((context) => {
-      const values = items.filter((item) => item.active && item.axis === axis && item.format === "scenario" && item.context === context && responses[item.item_id]).map((item) => responseValue(responses[item.item_id]) * item.direction / 2);
+      const values = items.filter((item) => item.active && item.axis === axis && item.format === "micro_sim" && item.context === context && isCompleteResponse(item, responses[item.item_id])).map((item) => microScenarioScore(item, responses[item.item_id]));
       scenarioContext[axis][context] = values.length ? avg(values) : 0;
     });
   });
@@ -407,13 +571,44 @@ function scoreAll(items, responses) {
     const channel = channels[axis];
     const signs = [Math.sign(channel.relative), Math.sign(channel.forced), Math.sign(channel.scenario)].filter((value) => value !== 0);
     const disagreement = signs.length >= 2 && new Set(signs).size > 1;
-    return Math.abs(axes[axis]) < 0.15 || disagreement;
+    const contextShift = Math.max(...Object.values(scenarioContext[axis])) - Math.min(...Object.values(scenarioContext[axis])) > 0.4;
+    return Math.abs(axes[axis]) < 0.15 || disagreement || contextShift;
   });
   const quality = responseQuality(items, responses);
   const confidence = dynamicAxes.length >= 3 || quality.consistency < 55 ? "Low" : dynamicAxes.length || quality.consistency < 78 ? "Medium" : "High";
   const precisionType = Object.keys(axisMeta).map((axis) => axes[axis] > 0.15 ? axisMeta[axis].positive : axes[axis] < -0.15 ? axisMeta[axis].negative : "X").join("");
   const bestFit = Object.keys(axisMeta).map((axis) => axes[axis] >= 0 ? axisMeta[axis].positive : axisMeta[axis].negative).join("");
-  return { facetScores, poleScores, channels, axes, profiles, architecture, scenarioContext, contextSensitivity, dynamicAxes, quality, confidence, precisionType, bestFit, scoringVersion: SCORING_VERSION };
+  return { facetScores, poleScores, channels, axes, profiles, architecture, scenarioContext, contextSensitivity, dynamicAxes, quality, confidence, precisionType, bestFit, scoringVersion: SCORING_VERSION, cognitiveFunctions: cognitiveFunctionScores(items, responses), cognitiveFacets: cognitiveFacetScores(items, responses) };
+}
+
+function microScenarioScore(item, response) {
+  const selected = item.step2Options?.find((option) => option.key === response?.step2);
+  if (!selected?.pole) return 0;
+  return selected.pole === axisMeta[item.axis]?.positive ? 1 : selected.pole === axisMeta[item.axis]?.negative ? -1 : 0;
+}
+
+function probeScore(item, response) {
+  const selected = item.options?.find((option) => option.key === response?.value);
+  if (!selected?.pole) return 0;
+  return selected.pole === axisMeta[item.axis]?.positive ? 1 : selected.pole === axisMeta[item.axis]?.negative ? -1 : 0;
+}
+
+function cognitiveFunctionScores(items, responses) {
+  const points = {};
+  items.filter((item) => item.format === "micro_sim" && isCompleteResponse(item, responses[item.item_id])).forEach((item) => {
+    const selected = item.step1Options.find((option) => option.key === responses[item.item_id].step1);
+    if (selected?.function_tag) points[selected.function_tag] = (points[selected.function_tag] || 0) + 2;
+  });
+  return points;
+}
+
+function cognitiveFacetScores(items, responses) {
+  const points = {};
+  items.filter((item) => item.format === "micro_sim" && isCompleteResponse(item, responses[item.item_id])).forEach((item) => {
+    const selected = item.step2Options.find((option) => option.key === responses[item.item_id].step2);
+    if (selected?.facet) points[selected.facet] = (points[selected.facet] || 0) + 1;
+  });
+  return points;
 }
 
 function responseQuality(items, responses) {
@@ -432,7 +627,7 @@ function responseQuality(items, responses) {
 }
 
 function formatName(format) {
-  return ({ behavior: "Behavioral evidence", forced_choice: "Forced choice", scenario: "Context scenario", probe: "Dynamic confirmation" }[format] || format);
+  return ({ behavior: "Behavioral evidence", forced_choice: "Forced choice", micro_sim: "Micro-simulation", cost: "Cognitive cost", probe: "Dynamic confirmation" }[format] || format);
 }
 function axisLabel(value, axis) {
   const meta = axisMeta[axis];
@@ -445,6 +640,15 @@ function contextLabel(value, axis) {
 }
 function contextZh(context) { return ({ free: "自由探索", responsibility: "責任環境", pressure: "時間壓力", uncertainty: "高度不確定" }[context] || context); }
 function scoreText(value) { return `${value}/100`; }
+
+function renderOptionButtons(options, selected, step = null) {
+  return (options || []).map((option) => {
+    const keyMode = step !== null || option.pole !== undefined;
+    const optionValue = keyMode ? option.key : option.value;
+    const isSelected = selected === optionValue;
+    return `<button class="option-btn ${isSelected ? "is-selected" : ""}" data-value="${escapeHtml(optionValue)}" data-mode="${keyMode ? "key" : "number"}" ${step !== null ? `data-step="${step}"` : ""}><span class="option-label">${escapeHtml(option.label)}</span><span class="option-key">${escapeHtml(option.key)}</span></button>`;
+  }).join("");
+}
 
 function renderIntro() {
   const hasProgress = !state.result && state.itemOrder.length && Object.keys(state.responses).length && state.view !== "result";
@@ -487,11 +691,13 @@ function renderQuiz() {
   const item = state.itemOrder[state.currentIndex];
   if (!item) return renderIntro();
   const response = state.responses[item.item_id];
-  const answered = Object.keys(state.responses).length;
+  const answered = state.itemOrder.filter((entry) => isCompleteResponse(entry, state.responses[entry.item_id])).length;
   const total = state.itemOrder.length;
   const format = formatName(item.format);
-  const options = item.options.map((option) => `<button class="option-btn ${response?.value === option.value ? "is-selected" : ""}" data-value="${option.value}"><span class="option-label">${escapeHtml(option.label)}${item.format !== "behavior" && option.key !== "C" ? "" : ""}</span><span class="option-key">${escapeHtml(option.key)}</span></button>`).join("");
-  const optionIntro = item.format === "behavior" ? "頻率" : `<span class="choice-a">A</span> ${escapeHtml(item.optionA)}<br /><span class="choice-b">B</span> ${escapeHtml(item.optionB)}`;
+  const selectedValue = response?.value ?? response?.answer;
+  const options = renderOptionButtons(item.options, selectedValue);
+  const optionIntro = item.format === "forced_choice" ? `<span class="choice-a">A</span> ${escapeHtml(item.optionA)}<br /><span class="choice-b">B</span> ${escapeHtml(item.optionB)}` : "";
+  const optionBlock = item.format === "micro_sim" ? `<div class="sim-step"><div class="sim-step-label"><b>Step 1</b><span>First Action · 第一個行動</span></div><div class="options" role="group" aria-label="Step 1 選項">${renderOptionButtons(item.step1Options, response?.step1, 1)}</div></div><div class="sim-step"><div class="sim-step-label"><b>Step 2</b><span>Primary Rationale · 最主要原因</span></div><div class="options" role="group" aria-label="Step 2 選項">${renderOptionButtons(item.step2Options, response?.step2, 2)}</div></div>` : `<div class="options" role="group" aria-label="回答選項">${options}</div>`;
   app.innerHTML = `<section class="view quiz-view">
     ${state.probeMode && state.currentIndex === state.itemOrder.length - ITEM_BANK.probes.filter((probe) => state.itemOrder.some((i) => i.item_id === probe.item_id)).length ? `<div class="welcome-banner"><span class="banner-mark">NEW</span><div><strong>加入少量確認題</strong><p>你的初步證據在部分軸向接近邊界或呈現不同情境反應，接下來最多 8 題只用來釐清這些差異。</p></div></div>` : ""}
     <div class="quiz-head"><div><h1>Core measurement</h1><p>${state.probeMode ? "Dynamic confirmation · 情境差異釐清" : "Behavioral + trade-off + context evidence"}</p></div><div class="quiz-count">${String(state.currentIndex + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}</div></div>
@@ -499,10 +705,10 @@ function renderQuiz() {
     <div class="quiz-layout">
       <article class="question-card">
         <div class="question-meta"><span class="question-format">${escapeHtml(format)}</span><span>evidence · ${String(state.currentIndex + 1).padStart(2, "0")}</span></div>
-        <p class="question-context">${item.format === "behavior" ? "請以最近真實行為回答" : item.format === "forced_choice" ? "兩種方法都有優點" : item.format === "scenario" ? "請指出你最先加入決策模型的資訊" : "釐清你的情境敏感度"}</p>
+        <p class="question-context">${item.format === "behavior" ? "請以最近真實行為回答" : item.format === "forced_choice" ? "兩種方法都有優點" : item.format === "micro_sim" ? "先選第一個行動，再選最主要原因" : item.format === "cost" ? "請評估這個心理歷程對你的自然程度" : "釐清你的情境敏感度"}</p>
         <h2 class="question-title">${escapeHtml(item.stem)}</h2>
-        ${item.format !== "behavior" ? `<p class="question-anchor choice-copy">${optionIntro}</p>` : `<p class="question-anchor">${escapeHtml(item.anchor)}</p>`}
-        <div class="options" role="group" aria-label="回答選項">${options}</div>
+        ${item.format === "forced_choice" ? `<p class="question-anchor choice-copy">${optionIntro}</p>` : item.format === "micro_sim" ? `<p class="question-anchor">${escapeHtml(item.anchor)}</p>` : `<p class="question-anchor">${escapeHtml(item.anchor)}</p>`}
+        ${optionBlock}
         <div class="quiz-foot"><button class="btn-quiet" id="prevButton" ${state.currentIndex === 0 ? "disabled" : ""}>← 上一題</button><span class="keyboard-note">可使用 1–5 選擇 · Enter 下一題</span><button class="btn-primary" id="nextButton">${state.currentIndex === total - 1 ? (state.probeMode ? "查看結果" : "完成核心測量") : "下一題 →"}</button></div>
       </article>
       <aside class="quiz-side">
@@ -512,7 +718,11 @@ function renderQuiz() {
       </aside>
     </div>
   </section>`;
-  app.querySelectorAll(".option-btn").forEach((button) => button.addEventListener("click", () => answerCurrent(Number(button.dataset.value))));
+  app.querySelectorAll(".option-btn").forEach((button) => button.addEventListener("click", () => {
+    const raw = button.dataset.value;
+    const value = button.dataset.mode === "key" ? raw : raw === "NA" ? null : Number(raw);
+    answerCurrent(value, button.dataset.step ? Number(button.dataset.step) : null);
+  }));
   document.getElementById("nextButton").addEventListener("click", moveNext);
   document.getElementById("prevButton").addEventListener("click", movePrevious);
   setTimeout(() => app.focus(), 0);
@@ -586,3 +796,4 @@ document.addEventListener("keydown", (event) => {
 
 restore();
 render();
+hydrateQuestionBank();

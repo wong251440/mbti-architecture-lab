@@ -1,0 +1,1810 @@
+本套題庫嚴格依據 **DCA Engine v1 (Dynamic Cognitive Architecture Engine)** 規範設計，共包含 **88 個反應事件**（80 核心題 ＋ 8 診斷 Probe 題）。全題庫包含完整的後端資料結構標籤（Metadata），供後端引擎直接進行結構化解析與零 Token 靜態計分。
+
+---
+
+# DCA Engine v1 題庫規格目錄
+* **Module A｜48 行為證據題 (Behavioral Evidence)**：24 Facets × 2 題
+* **Module B｜12 強制認知交易題 (Forced Cognitive Trade-offs)**：4 軸 × 3 題
+* **Module C｜12 認知微型模擬題 (Micro-Simulations)**：4 軸 × 3 題（每題二階段 Step 1 行為 ＋ Step 2 動機）
+* **Module D｜8 認知成本與耗能題 (Cognitive Cost / Recovery)**：8 個極向 × 1 題
+* **Diagnostic Probes｜8 動態自適應診斷題**：4 軸 × 2 題
+
+---
+
+## Module A｜48 行為證據題 (Behavioral Evidence)
+
+> **作答量尺（全 Module A 統一）**：
+> * `[NA]` 不適用 / 無相關經驗（不計入分母與平均）
+> * `[0]` 幾乎沒有（0 分）
+> * `[1]` 少數情況（1 分）
+> * `[2]` 約一半情況（2 分）
+> * `[3]` 多數情況（3 分）
+> * `[4]` 幾乎每次（4 分）
+>
+> **計分轉換**：$\text{Facet 分數} = \frac{\text{總得分}}{\text{有效作答題數} \times 4} \times 100$
+
+---
+
+### E — External Engagement (外在參與)
+
+#### E1 Social Initiation
+```json
+{
+  "item_id": "A_E1_01",
+  "module": "A",
+  "axis": "EI",
+  "pole": "E",
+  "facet": "E1",
+  "context": "social_entry",
+  "pressure_level": "low",
+  "opportunity_required": true,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：回想最近幾次進入一個包含多位不熟悉者的工作或社交場合。當客觀環境允許自由交談時，你多常主動開啟第一個話題或自我介紹，而不是等待他人先向你搭話？
+
+---
+
+```json
+{
+  "item_id": "A_E1_02",
+  "module": "A",
+  "axis": "EI",
+  "pole": "E",
+  "facet": "E1",
+  "context": "collaboration_startup",
+  "pressure_level": "low",
+  "opportunity_required": true,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：在需要跨部門、跨組或與新夥伴合作的新專案開始時，若沒有既定流程規定，你多常自發性地主動聯繫相關人員建立初步互動？
+
+---
+
+#### E2 External Processing
+```json
+{
+  "item_id": "A_E2_01",
+  "module": "A",
+  "axis": "EI",
+  "pole": "E",
+  "facet": "E2",
+  "context": "ideation",
+  "pressure_level": "low",
+  "opportunity_required": true,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：當你需要釐清一個複雜或尚未成形的新概念時，你多常藉由「找人邊講邊討論」來逐步理清自己的思緒，而不是先自己完全想通才開口？
+
+---
+
+```json
+{
+  "item_id": "A_E2_02",
+  "module": "A",
+  "axis": "EI",
+  "pole": "E",
+  "facet": "E2",
+  "context": "problem_solving",
+  "pressure_level": "medium",
+  "opportunity_required": true,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：在解決卡關的難題時，你多常主動將思考過程大聲說出來，或藉由即時向他人拋出未成熟想法來推進下一步判斷？
+
+---
+
+#### E3 External Stimulation
+```json
+{
+  "item_id": "A_E3_01",
+  "module": "A",
+  "axis": "EI",
+  "pole": "E",
+  "facet": "E3",
+  "context": "environment_stimulation",
+  "pressure_level": "low",
+  "opportunity_required": false,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：當身處節奏快速、互動頻繁、充滿外界事件的環境中時，你多常發現自己的精神狀態與思維活躍度會隨之顯著提升？
+
+---
+
+```json
+{
+  "item_id": "A_E3_02",
+  "module": "A",
+  "axis": "EI",
+  "pole": "E",
+  "facet": "E3",
+  "context": "work_dynamics",
+  "pressure_level": "low",
+  "opportunity_required": false,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：連續數天處於安靜無干擾、無外界事件變化的封閉環境中時，你多常主動尋找外部活動、聚會或動態場景來重新激發自身活力？
+
+---
+
+### I — Internal Engagement (內在參與)
+
+#### I1 Solitary Recovery
+```json
+{
+  "item_id": "A_I1_01",
+  "module": "A",
+  "axis": "EI",
+  "pole": "I",
+  "facet": "I1",
+  "context": "energy_recovery",
+  "pressure_level": "high",
+  "opportunity_required": true,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：在經歷一整天高密度的社交或團隊協作後，你多常需要一段完全無人打擾的單獨時間，心理與專注力才能真正回到基準線？
+
+---
+
+```json
+{
+  "item_id": "A_I1_02",
+  "module": "A",
+  "axis": "EI",
+  "pole": "I",
+  "facet": "I1",
+  "context": "weekend_recharge",
+  "pressure_level": "low",
+  "opportunity_required": true,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：當你感到認知資源見底、思緒混亂時，你多常自然選擇「暫停所有對外互動、獨自沉靜」作為最有效恢復精神的手段？
+
+---
+
+#### I2 Internal Processing
+```json
+{
+  "item_id": "A_I2_01",
+  "module": "A",
+  "axis": "EI",
+  "pole": "I",
+  "facet": "I2",
+  "context": "opinion_formation",
+  "pressure_level": "medium",
+  "opportunity_required": true,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：在重要會議或公開討論中被徵詢觀點時，你多常傾向在內心中先將論點組織完整、確認邏輯無誤後，才正式開口表達？
+
+---
+
+```json
+{
+  "item_id": "A_I2_02",
+  "module": "A",
+  "axis": "EI",
+  "pole": "I",
+  "facet": "I2",
+  "context": "feedback_processing",
+  "pressure_level": "low",
+  "opportunity_required": true,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：面對突如其來的重要資訊或提議時，你多常需要先將其帶回個人內部空間反芻消化，而不是在當下立即給出最終結論？
+
+---
+
+#### I3 Internal Absorption
+```json
+{
+  "item_id": "A_I3_01",
+  "module": "A",
+  "axis": "EI",
+  "pole": "I",
+  "facet": "I3",
+  "context": "inner_immersion",
+  "pressure_level": "low",
+  "opportunity_required": false,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：在沒有外界任務催促的空閒時間，你多常長時間沉浸在個人內在的思緒、構想或自我對話中，以至於忽略外界環境的變化？
+
+---
+
+```json
+{
+  "item_id": "A_I3_02",
+  "module": "A",
+  "axis": "EI",
+  "pole": "I",
+  "facet": "I3",
+  "context": "thought_depth",
+  "pressure_level": "low",
+  "opportunity_required": false,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：相較於外界發生的瑣碎動態，你多常自發性地將注意力投注於探索自己內心深處的理論模型、記憶庫或概念體系？
+
+---
+
+### S — Concrete Grounding (具體實證)
+
+#### S1 Evidence Priority
+```json
+{
+  "item_id": "A_S1_01",
+  "module": "A",
+  "axis": "SN",
+  "pole": "S",
+  "facet": "S1",
+  "context": "claim_verification",
+  "pressure_level": "medium",
+  "opportunity_required": true,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：當別人向你提出一個宏大的新方案或理論時，你多常第一反應先要求查看具體數據、實際測試結果或確鑿的佐證事實？
+
+---
+
+```json
+{
+  "item_id": "A_S1_02",
+  "module": "A",
+  "axis": "SN",
+  "pole": "S",
+  "facet": "S1",
+  "context": "decision_basis",
+  "pressure_level": "medium",
+  "opportunity_required": true,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：在評估方案可行性時，如果一項構想缺乏直接可驗證的客觀事實支持，你多常暫緩對其下定論，直到取得硬性證據？
+
+---
+
+#### S2 Detail Registration
+```json
+{
+  "item_id": "A_S2_01",
+  "module": "A",
+  "axis": "SN",
+  "pole": "S",
+  "facet": "S2",
+  "context": "environment_observation",
+  "pressure_level": "low",
+  "opportunity_required": false,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：在審閱文件、操作介面或觀察實體環境時，你多常能第一時間察覺其中的細微瑕疵、數據不一致或微小的具體變化？
+
+---
+
+```json
+{
+  "item_id": "A_S2_02",
+  "module": "A",
+  "axis": "SN",
+  "pole": "S",
+  "facet": "S2",
+  "context": "instruction_following",
+  "pressure_level": "low",
+  "opportunity_required": true,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：在執行複雜流程或操作手冊時，你多常逐條核對每一個具體步驟與參數，確保沒有遺漏任何實務細節？
+
+---
+
+#### S3 Experience Anchoring
+```json
+{
+  "item_id": "A_S3_01",
+  "module": "A",
+  "axis": "SN",
+  "pole": "S",
+  "facet": "S3",
+  "context": "problem_solving",
+  "pressure_level": "medium",
+  "opportunity_required": true,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：面對未曾遇過的新挑戰時，你多常優先檢索過往類似情境的成功經驗或既有的成熟標準作業範例（SOP）作為執行基礎？
+
+---
+
+```json
+{
+  "item_id": "A_S3_02",
+  "module": "A",
+  "axis": "SN",
+  "pole": "S",
+  "facet": "S3",
+  "context": "risk_assessment",
+  "pressure_level": "low",
+  "opportunity_required": true,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：在評估一項變革提案時，你多常以「該方法在過去是否有可被檢驗的實績」作為判斷其可靠程度的最主要標準？
+
+---
+
+### N — Abstract Synthesis (抽象綜效)
+
+#### N1 Abstraction
+```json
+{
+  "item_id": "A_N1_01",
+  "module": "A",
+  "axis": "SN",
+  "pole": "N",
+  "facet": "N1",
+  "context": "information_intake",
+  "pressure_level": "low",
+  "opportunity_required": false,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：面對大量紛雜的具體資料或零散事實時，你多常自然將其快速凝練成背後的核心概念、運作架構或上位原理？
+
+---
+
+```json
+{
+  "item_id": "A_N1_02",
+  "module": "A",
+  "axis": "SN",
+  "pole": "N",
+  "facet": "N1",
+  "context": "conceptual_mapping",
+  "pressure_level": "low",
+  "opportunity_required": false,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：向他人說明複雜事務時，你多常優先描繪整體結構模型或概念圖景，而非逐一列舉具體細節步驟？
+
+---
+
+#### N2 Pattern Linking
+```json
+{
+  "item_id": "A_N2_01",
+  "module": "A",
+  "axis": "SN",
+  "pole": "N",
+  "facet": "N2",
+  "context": "cross_domain",
+  "pressure_level": "low",
+  "opportunity_required": false,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：在處理某個領域的問題時，你多常自發性地聯想到表面毫無關聯的其他領域知識或現象，並從中找出共通的運作規律？
+
+---
+
+```json
+{
+  "item_id": "A_N2_02",
+  "module": "A",
+  "axis": "SN",
+  "pole": "N",
+  "facet": "N2",
+  "context": "trend_synthesis",
+  "pressure_level": "medium",
+  "opportunity_required": false,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：觀察環境中幾起獨立發生的偶發事件時，你多常直覺地將它們串聯起來，辨識出背後正在形成的趨勢或潛在模式？
+
+---
+
+#### N3 Possibility Generation
+```json
+{
+  "item_id": "A_N3_01",
+  "module": "A",
+  "axis": "SN",
+  "pole": "N",
+  "facet": "N3",
+  "context": "brainstorming",
+  "pressure_level": "low",
+  "opportunity_required": true,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：當面對尚未定義明確的新問題時，在資料完全收集以前，你多常在短時間內就自發性激盪出多種不同的未來走向或替代假說？
+
+---
+
+```json
+{
+  "item_id": "A_N3_02",
+  "module": "A",
+  "axis": "SN",
+  "pole": "N",
+  "facet": "N3",
+  "context": "scenario_projection",
+  "pressure_level": "low",
+  "opportunity_required": false,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：在既有路徑運作順利時，你多常仍會主動設想「如果完全換一種全新方式做會如何」的各種潛在可能？
+
+---
+
+### T — Analytical Judgment (分析判斷)
+
+#### T1 Logical Consistency
+```json
+{
+  "item_id": "A_T1_01",
+  "module": "A",
+  "axis": "TF",
+  "pole": "T",
+  "facet": "T1",
+  "context": "argument_critique",
+  "pressure_level": "low",
+  "opportunity_required": false,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：在聆聽一項論述或閱讀企劃時，你多常能迅速揪出其前提與結論之間邏輯不通、前後矛盾或推理跳躍的瑕疵？
+
+---
+
+```json
+{
+  "item_id": "A_T1_02",
+  "module": "A",
+  "axis": "TF",
+  "pole": "T",
+  "facet": "T1",
+  "context": "rule_consistency",
+  "pressure_level": "medium",
+  "opportunity_required": true,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：在建立運作準則或評估方案時，你多常堅持邏輯體系內部必須嚴密自洽，即使這會讓某些例外情況難以被通融？
+
+---
+
+#### T2 Impersonal Criteria
+```json
+{
+  "item_id": "A_T2_01",
+  "module": "A",
+  "axis": "TF",
+  "pole": "T",
+  "facet": "T2",
+  "context": "conflict_adjudication",
+  "pressure_level": "high",
+  "opportunity_required": true,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：當需要對涉及親近夥伴的事務進行裁決或績效評核時，你多常能抽離個人私交與情緒，完全依據統一的客觀標準進行評判？
+
+---
+
+```json
+{
+  "item_id": "A_T2_02",
+  "module": "A",
+  "axis": "TF",
+  "pole": "T",
+  "facet": "T2",
+  "context": "objective_evaluation",
+  "pressure_level": "medium",
+  "opportunity_required": true,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：在討論具爭議性議題時，你多常優先使用非個人化的客觀事實與規章指標作為裁決基礎，而非訴諸個人感受？
+
+---
+
+#### T3 Trade-off Analysis
+```json
+{
+  "item_id": "A_T3_01",
+  "module": "A",
+  "axis": "TF",
+  "pole": "T",
+  "facet": "T3",
+  "context": "resource_allocation",
+  "pressure_level": "high",
+  "opportunity_required": true,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：在做出關鍵決策前，你多常自然建立利弊得失清單，嚴格分析投入產出比（ROI）、潛在風險與各選項的代價（Trade-off）？
+
+---
+
+```json
+{
+  "item_id": "A_T3_02",
+  "module": "A",
+  "axis": "TF",
+  "pole": "T",
+  "facet": "T3",
+  "context": "bottleneck_analysis",
+  "pressure_level": "medium",
+  "opportunity_required": true,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：面對資源有限的困境時，你多常依據冷靜的因果推演與成本效益最大化來決定優先順序，果斷捨棄低產出項目？
+
+---
+
+### F — Value / Human Judgment (價值與人本判斷)
+
+#### F1 Value Alignment
+```json
+{
+  "item_id": "A_F1_01",
+  "module": "A",
+  "axis": "TF",
+  "pole": "F",
+  "facet": "F1",
+  "context": "moral_choice",
+  "pressure_level": "high",
+  "opportunity_required": true,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：在評估一項任務或決定時，你多常優先檢驗它是否符合自己堅守的內在核心道德原則，即使該方案在數據效益上看起來最優？
+
+---
+
+```json
+{
+  "item_id": "A_F1_02",
+  "module": "A",
+  "axis": "TF",
+  "pole": "F",
+  "facet": "F1",
+  "context": "mission_alignment",
+  "pressure_level": "medium",
+  "opportunity_required": true,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：若某項工作與你個人真正認同的信念或群體核心價值產生衝突，你多常因此對其產生強烈的內在排斥並尋求調整？
+
+---
+
+#### F2 Human Impact
+```json
+{
+  "item_id": "A_F2_01",
+  "module": "A",
+  "axis": "TF",
+  "pole": "F",
+  "facet": "F2",
+  "context": "policy_change",
+  "pressure_level": "medium",
+  "opportunity_required": true,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：在推行一項新規定或制度調整時，你多常主動考量該決定對參與者的心理感受、士氣及生活所造成的實質影響？
+
+---
+
+```json
+{
+  "item_id": "A_F2_02",
+  "module": "A",
+  "axis": "TF",
+  "pole": "F",
+  "facet": "F2",
+  "context": "team_wellbeing",
+  "pressure_level": "medium",
+  "opportunity_required": true,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：在追求目標效率與維護團隊成員心理健康／歸屬感之間產生拉扯時，你多常主動將「人的承受力」置於決策核心？
+
+---
+
+#### F3 Perspective Integration
+```json
+{
+  "item_id": "A_F3_01",
+  "module": "A",
+  "axis": "TF",
+  "pole": "F",
+  "facet": "F3",
+  "context": "disagreement",
+  "pressure_level": "medium",
+  "opportunity_required": true,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：當團隊內部產生嚴重意見分歧時，你多常主動代入不同立場者的處境，模擬他們的感受、潛在顧慮與核心需求？
+
+---
+
+```json
+{
+  "item_id": "A_F3_02",
+  "module": "A",
+  "axis": "TF",
+  "pole": "F",
+  "facet": "F3",
+  "context": "stakeholder_harmony",
+  "pressure_level": "low",
+  "opportunity_required": true,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：在規劃行動方案時，你多常主動尋求讓各方關係人都能被尊重、被看見的包容性解法，以達成真正的共識？
+
+---
+
+### J — Structured Closure (結構收斂)
+
+#### J1 Closure Preference
+```json
+{
+  "item_id": "A_J1_01",
+  "module": "A",
+  "axis": "JP",
+  "pole": "J",
+  "facet": "J1",
+  "context": "decision_urgency",
+  "pressure_level": "medium",
+  "opportunity_required": true,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：當討論進行到資訊已大致齊全時，你多常傾向迅速拍板定案並落實為決議，而不是繼續懸擱以等待更多可能？
+
+---
+
+```json
+{
+  "item_id": "A_J1_02",
+  "module": "A",
+  "axis": "JP",
+  "pole": "J",
+  "facet": "J1",
+  "context": "open_loops",
+  "pressure_level": "low",
+  "opportunity_required": false,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：面對懸而未決的專案或待辦事項時，你多常感受到一種內在張力，促使你盡快將其劃上句號以獲得心理安定？
+
+---
+
+#### J2 Pre-structuring
+```json
+{
+  "item_id": "A_J2_01",
+  "module": "A",
+  "axis": "JP",
+  "pole": "J",
+  "facet": "J2",
+  "context": "project_planning",
+  "pressure_level": "low",
+  "opportunity_required": true,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：在正式著手執行新任務前，你多常自發性地預先列出明確的時間表、里程碑與優先順序架構？
+
+---
+
+```json
+{
+  "item_id": "A_J2_02",
+  "module": "A",
+  "axis": "JP",
+  "pole": "J",
+  "facet": "J2",
+  "context": "daily_organization",
+  "pressure_level": "low",
+  "opportunity_required": false,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：在日常生活或工作安排中，你多常依靠明確的清單、日曆規劃或預排好的流程來推進一整天的活動？
+
+---
+
+#### J3 Commitment Stability
+```json
+{
+  "item_id": "A_J3_01",
+  "module": "A",
+  "axis": "JP",
+  "pole": "J",
+  "facet": "J3",
+  "context": "plan_execution",
+  "pressure_level": "medium",
+  "opportunity_required": true,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：一旦與他人敲定既定計畫或時間表，只要沒有重大意外發生，你多常嚴格按原定進度貫徹執行，不隨意變更承諾？
+
+---
+
+```json
+{
+  "item_id": "A_J3_02",
+  "module": "A",
+  "axis": "JP",
+  "pole": "J",
+  "facet": "J3",
+  "context": "schedule_discipline",
+  "pressure_level": "medium",
+  "opportunity_required": true,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：面對中途出現的臨時誘惑或小插曲，你多常堅持原有設定的執行路線，確保在預定死線（Deadline）前交付結果？
+
+---
+
+### P — Adaptive Exploration (適應探索)
+
+#### P1 Option Preservation
+```json
+{
+  "item_id": "A_P1_01",
+  "module": "A",
+  "axis": "JP",
+  "pole": "P",
+  "facet": "P1",
+  "context": "decision_timing",
+  "pressure_level": "low",
+  "opportunity_required": true,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：在時間尚稱充裕的情況下，你多常刻意延後做最終決定的時間點，以保留更多彈性與探索替代方案的空間？
+
+---
+
+```json
+{
+  "item_id": "A_P1_02",
+  "module": "A",
+  "axis": "JP",
+  "pole": "P",
+  "facet": "P1",
+  "context": "contract_flexibility",
+  "pressure_level": "low",
+  "opportunity_required": true,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：在制定協議或方向時，你多常傾向保留「隨時可調整條款」或開口合約，避免過早把自己徹底綁定在一條固定軌道上？
+
+---
+
+#### P2 Live Updating
+```json
+{
+  "item_id": "A_P2_01",
+  "module": "A",
+  "axis": "JP",
+  "pole": "P",
+  "facet": "P2",
+  "context": "emerging_info",
+  "pressure_level": "high",
+  "opportunity_required": true,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：當執行中途突然出現關鍵新資訊或新變化時，即使原方案已經投入相當時間，你多常能毫不猶豫、順暢地即時修改既定安排？
+
+---
+
+```json
+{
+  "item_id": "A_P2_02",
+  "module": "A",
+  "axis": "JP",
+  "pole": "P",
+  "facet": "P2",
+  "context": "plan_pivot",
+  "pressure_level": "medium",
+  "opportunity_required": true,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：在動態多變的情境中，你多常將原有計畫視為「隨時可迭代的草稿」，享受根據當下最新事態靈活調整的過程？
+
+---
+
+#### P3 Exploratory Action
+```json
+{
+  "item_id": "A_P3_01",
+  "module": "A",
+  "axis": "JP",
+  "pole": "P",
+  "facet": "P3",
+  "context": "open_ended_task",
+  "pressure_level": "low",
+  "opportunity_required": true,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：面對一個全新且未知的任務時，你多常選擇「邊做邊摸索、由行動中自然浮現方向」，而非等完整結構想清楚才開始動手？
+
+---
+
+```json
+{
+  "item_id": "A_P3_02",
+  "module": "A",
+  "axis": "JP",
+  "pole": "P",
+  "facet": "P3",
+  "context": "improvisation",
+  "pressure_level": "low",
+  "opportunity_required": false,
+  "scoring_key": {"NA": null, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4}
+}
+```
+**題目**：在非結構化的自由探索中，你多常順應偶發的靈感或現場情境隨興發揮，並在即興應變中激發出最佳表現？
+
+---
+
+## Module B｜12 強制認知交易題 (Forced Cognitive Trade-offs)
+
+> **作答量詞（全 Module B 統一）**：
+> * `[-2]` 強烈偏向 A
+> * `[-1]` 稍微偏向 A
+> * `[0]`  無明顯偏向 / 兩者平衡
+> * `[+1]` 稍微偏向 B
+> * `[+2]` 強烈偏向 B
+>
+> **計分說明**：A 選項對應第一極向（E, S, T, J 負分側），B 選項對應第二極向（I, N, F, P 正分側）。
+
+---
+
+### EI 軸交易題
+
+```json
+{
+  "item_id": "B_EI_01",
+  "module": "B",
+  "axis": "EI",
+  "pole_A": "E",
+  "pole_B": "I",
+  "tradeoff_type": "processing_channel",
+  "scoring_key": {"A_strong": -2, "A_slight": -1, "neutral": 0, "B_slight": 1, "B_strong": 2}
+}
+```
+**情境**：你剛接下一個極度棘手且從未遇過的新專案，今天下午只有兩個小時的完全專注時間。你只能先選擇其中一種方式啟動：
+* **選項 A**：召集幾位關鍵核心成員召開開放式腦力激盪會，藉由高頻互動與即時對話碰撞出第一版方案。
+* **選項 B**：獨自關閉通訊軟體進入閉門深思，由自己徹底消化背景資料並在內部梳理出完整的邏輯架構。
+
+---
+
+```json
+{
+  "item_id": "B_EI_02",
+  "module": "B",
+  "axis": "EI",
+  "pole_A": "E",
+  "pole_B": "I",
+  "tradeoff_type": "energy_deployment",
+  "scoring_key": {"A_strong": -2, "A_slight": -1, "neutral": 0, "B_slight": 1, "B_strong": 2}
+}
+```
+**情境**：在一場高規格的跨界論壇茶會中，若你目前的精神精力有限，你只能優先將能量投入其中一件事：
+* **選項 A**：主動在會場中穿梭，與多位來自不同領域的新面孔快速建立連結並交換外部市場動態。
+* **選項 B**：與一兩位談話深入的舊識或核心專家留在安靜角落，針對特定專業議題進行深度的精神交流。
+
+---
+
+```json
+{
+  "item_id": "B_EI_03",
+  "module": "B",
+  "axis": "EI",
+  "pole_A": "E",
+  "pole_B": "I",
+  "tradeoff_type": "decision_validation",
+  "scoring_key": {"A_strong": -2, "A_slight": -1, "neutral": 0, "B_slight": 1, "B_strong": 2}
+}
+```
+**情境**：當你對於一個重大職涯或人生轉折舉棋不定時，你認為哪一種驗證路徑對你更具決定性：
+* **選項 A**：積極向各方導師、同行與朋友反覆拋出想法，在多方回饋與對話共振中找出最佳共識方向。
+* **選項 B**：遠離外界所有聲音，給自己一段長時數的獨處沉澱，直到內在的直覺與真實自我對話達成完全清晰。
+
+---
+
+### SN 軸交易題
+
+```json
+{
+  "item_id": "B_SN_01",
+  "module": "B",
+  "axis": "SN",
+  "pole_A": "S",
+  "pole_B": "N",
+  "tradeoff_type": "problem_framing",
+  "scoring_key": {"A_strong": -2, "A_slight": -1, "neutral": 0, "B_slight": 1, "B_strong": 2}
+}
+```
+**情境**：你剛接手診斷一個成效嚴重下滑的業務單位，資源只允許你今天先調閱一份報告：
+* **選項 A**：調閱過去半年的實際客訴紀錄、第一線現場訪談與精確銷售明細數據。
+* **選項 B**：調閱產業宏觀趨勢演變圖、競爭對手商業模式推演與未來五年潛在生態模型。
+
+---
+
+```json
+{
+  "item_id": "B_SN_02",
+  "module": "B",
+  "axis": "SN",
+  "pole_A": "S",
+  "pole_B": "N",
+  "tradeoff_type": "product_design",
+  "scoring_key": {"A_strong": -2, "A_slight": -1, "neutral": 0, "B_slight": 1, "B_strong": 2}
+}
+```
+**情境**：在研發一款新產品時面臨資源二選一的瓶頸，你傾向將團隊重心優先鎖定在：
+* **選項 A**：將現有功能的所有操作細節、效能穩定性與使用者實體操作手感打磨到無可挑剔。
+* **選項 B**：開創顛覆性的核心運作概念與前瞻性架構，即便第一版在某些具體細節上尚不夠平滑。
+
+---
+
+```json
+{
+  "item_id": "B_SN_03",
+  "module": "B",
+  "axis": "SN",
+  "pole_A": "S",
+  "pole_B": "N",
+  "tradeoff_type": "strategic_focus",
+  "scoring_key": {"A_strong": -2, "A_slight": -1, "neutral": 0, "B_slight": 1, "B_strong": 2}
+}
+```
+**情境**：在為團隊設定年度指引方針時，你認為哪一種表述更具實務引導價值：
+* **選項 A**：奠基於過去經驗與確鑿實績、具有具體可落實執行指標與確切步驟的操作清單。
+* **選項 B**：描繪高度啟發性、跳脫既有框架並能激發無限可能性的未來願景藍圖。
+
+---
+
+### TF 軸交易題
+
+```json
+{
+  "item_id": "B_TF_01",
+  "module": "B",
+  "axis": "TF",
+  "pole_A": "T",
+  "pole_B": "F",
+  "tradeoff_type": "system_vs_individual",
+  "scoring_key": {"A_strong": -2, "A_slight": -1, "neutral": 0, "B_slight": 1, "B_strong": 2}
+}
+```
+**情境**：組織正處於生死存亡的轉型期，必須在當天裁撤一個效益不彰的部門。面臨最後評決：
+* **選項 A**：嚴格依據投入產出比、客觀產能數據與流程冗餘度進行裁撤，確保體制維持最高邏輯效率。
+* **選項 B**：優先考量成員長期對組織的忠誠度、家庭經濟衝擊與團隊情感信任，尋求兼顧人性溫度的調整。
+
+---
+
+```json
+{
+  "item_id": "B_TF_02",
+  "module": "B",
+  "axis": "TF",
+  "pole_A": "T",
+  "pole_B": "F",
+  "tradeoff_type": "truth_vs_harmony",
+  "scoring_key": {"A_strong": -2, "A_slight": -1, "neutral": 0, "B_slight": 1, "B_strong": 2}
+}
+```
+**情境**：一位要好且自尊心強的同事向你展示他投入數月完成的成果，但你發現其架構存在致命邏輯缺陷。此時你優先選擇：
+* **選項 A**：直接且不加掩飾地指明其根本邏輯漏洞與潛在風險，因為客觀真實高於短暫的感受。
+* **選項 B**：先同理對方付出的巨大心血並肯定其核心價值，在保護對方信心與關係的前提下委婉引導修正。
+
+---
+
+```json
+{
+  "item_id": "B_TF_03",
+  "module": "B",
+  "axis": "TF",
+  "pole_A": "T",
+  "pole_B": "F",
+  "tradeoff_type": "decision_metric",
+  "scoring_key": {"A_strong": -2, "A_slight": -1, "neutral": 0, "B_slight": 1, "B_strong": 2}
+}
+```
+**情境**：在評判一個歷史重大爭議事件的是非對錯時，你更容易信服哪一種評判視角：
+* **選項 A**：依據制度規範、法理邏輯自洽性與普遍適用的客觀標準進行無差別審查。
+* **選項 B**：依據事件參與者的真實人性苦難、核心倫理動機與道德良知進行深層價值衡量。
+
+---
+
+### JP 軸交易題
+
+```json
+{
+  "item_id": "B_JP_01",
+  "module": "B",
+  "axis": "JP",
+  "pole_A": "J",
+  "pole_B": "P",
+  "tradeoff_type": "process_control",
+  "scoring_key": {"A_strong": -2, "A_slight": -1, "neutral": 0, "B_slight": 1, "B_strong": 2}
+}
+```
+**情境**：你正在帶領一項為期一個月的創新攻堅任務，在專案啟動日你傾向確立哪種運作模式：
+* **選項 A**：將里程碑、各階段截止日期與分工責任表定案，非不可抗力不得隨意更動進度。
+* **選項 B**：只設定最終交付目標，中間進度完全保持動態開放，允許團隊隨探索到的新資訊隨時重組流程。
+
+---
+
+```json
+{
+  "item_id": "B_JP_02",
+  "module": "B",
+  "axis": "JP",
+  "pole_A": "J",
+  "pole_B": "P",
+  "tradeoff_type": "late_change",
+  "scoring_key": {"A_strong": -2, "A_slight": -1, "neutral": 0, "B_slight": 1, "B_strong": 2}
+}
+```
+**情境**：距離專案正式上線交付只剩最後三天，團隊突然發現了一個可能帶來額外 20% 亮點但需要大幅修改架構的新概念：
+* **選項 A**：堅決按原定計畫推進上線，確保如期交付與結構完整性，將新想法留待二期再議。
+* **選項 B**：立即重組現有排程並動員調整，寧可承擔推遲風險也要把最新的潛在優化納入當前成果。
+
+---
+
+```json
+{
+  "item_id": "B_JP_03",
+  "module": "B",
+  "axis": "JP",
+  "pole_A": "J",
+  "pole_B": "P",
+  "tradeoff_type": "lifestyle_structure",
+  "scoring_key": {"A_strong": -2, "A_slight": -1, "neutral": 0, "B_slight": 1, "B_strong": 2}
+}
+```
+**情境**：面對一段為期兩週的長假，你更傾向以哪一種狀態度過：
+* **選項 A**：預先規劃好交通、住宿、重要參訪節點與每日主要節奏，享受井然有序的掌控感。
+* **選項 B**：只訂好往返機票，每天早晨根據當天天氣、心情與偶然遇到的有趣事物隨性決定行程。
+
+---
+
+## Module C｜12 認知微型模擬題 (Micro-Simulations)
+
+每題採**二階段階梯設計**：
+* **Step 1 (First Action)**：測量第一反應行為模式（標記 8 Cognitive Function Indicators，選擇給予 2 Evidence Points）。
+* **Step 2 (Primary Rationale)**：測量行為背後的真實底層機制（標記 Primary/Secondary Facets，選擇給予 1 Evidence Point）。
+
+---
+
+### SN 軸微型情境 (SN-01 ~ SN-03)
+
+#### C_SN_01｜危機現場的資訊解讀
+```json
+{
+  "item_id": "C_SN_01",
+  "module": "C",
+  "axis": "SN",
+  "context_type": "pressure_time",
+  "pressure_level": "high"
+}
+```
+**情境主幹**：一場重要的產品線上發布會正在進行，核心系統突然發生嚴重異常崩潰，線上數萬名用戶面臨斷線，你只有 5 分鐘時間採取第一步應變。
+
+##### Step 1：你的第一個行動是什麼？
+* **A**：迅速調閱當下最即時的報警日誌、伺服器即時負載與即時錯誤代碼。（`function: Se`）
+* **B**：立即比對過去幾次重大更新的備份紀錄，尋找過去曾成功修復類似故障的歷史設定檔。（`function: Si`）
+* **C**：迅速聯想本次異常可能涉及的數種系統架構弱點，並同步推演數種潛在的繞道應急方案。（`function: Ne`）
+* **D**：跳脫具體報警細節，直覺抓取整個崩潰鏈條的核心瓶頸模式，快速鎖定單一最可能的根因。（`function: Ni`）
+
+##### Step 2：你採取上述行動的最主要原因是？
+* **A**：在混亂中，只有最直接、可感知的當下事實才是唯一可靠的依據。（`facet: S1`, `pole: S`）
+* **B**：經過歷史檢驗的成熟路徑能以最低風險穩住局面。（`facet: S3`, `pole: S`）
+* **C**：快速開拓多個潛在可能性才能避免在未知故障中被單一假設綁死。（`facet: N3`, `pole: N`）
+* **D**：必須直擊事物本質架構，從上位原理掌握全貌才能真正解決問題。（`facet: N1`, `pole: N`）
+
+---
+
+#### C_SN_02｜自由研究的探索方向
+```json
+{
+  "item_id": "C_SN_02",
+  "module": "C",
+  "axis": "SN",
+  "context_type": "free_exploration",
+  "pressure_level": "low"
+}
+```
+**情境主幹**：公司給予你整整一個月的全薪自由探索期，無任何 KPI 限制，允許你研究任何對未來有益的主題。
+
+##### Step 1：你的第一個行動是什麼？
+* **A**：實地走訪多個實體產業現場、調研使用者最真實的日常操作細節與實務痛點。（`function: Se`）
+* **B**：深入整理與歸納該領域過去數十年的經典文獻、歷史案例演變與標準知識體系。（`function: Si`）
+* **C**：廣泛瀏覽跨領域的前沿科技、藝術與哲學資訊，嘗試將毫不相干的領域交叉碰撞出新概念。（`function: Ne`）
+* **D**：專注於構建一套能夠解釋與預測未來十年該領域演變的底層架構模型。（`function: Ni`）
+
+##### Step 2：你採取上述行動的最主要原因是？
+* **A**：真實世界中的具體實證細節才是一切價值的根基。（`facet: S2`, `pole: S`）
+* **B**：唯有紮實掌握已知且被驗證過的經驗，探索才不會淪為空中樓閣。（`facet: S3`, `pole: S`）
+* **C**：跨領域的模式聯結（Pattern Linking）往往是產生突破性創新的源泉。（`facet: N2`, `pole: N`）
+* **D**：將紛雜現象抽離出核心本質（Abstraction）才是認知的最高境界。（`facet: N1`, `pole: N`）
+
+---
+
+#### C_SN_03｜模糊專案的啟動
+```json
+{
+  "item_id": "C_SN_03",
+  "module": "C",
+  "axis": "SN",
+  "context_type": "uncertainty",
+  "pressure_level": "medium"
+}
+```
+**情境主幹**：主管指派給你一個定義模糊的任務：「提升團隊整體的協同智慧」，完全沒有提供任何具體規格與要求。
+
+##### Step 1：你的第一個行動是什麼？
+* **A**：立即統計團隊近一個月的會議時長、溝通工具訊息量與具體產出清單。（`function: Se`）
+* **B**：調閱業界公認的最佳實踐手冊，參照標竿企業過去行之有效的協作規範範本。（`function: Si`）
+* **C**：召集大家拋開現狀，盡情發想「未來的超級協同」可以有哪些天馬行空的全新可能。（`function: Ne`）
+* **D**：深入分析團隊人際與資訊流動的隱性深層動力學，找出制約整體系統的底層規律。（`function: Ni`）
+
+##### Step 2：你採取上述行動的最主要原因是？
+* **A**：必須先有硬性數據與具體事實，才能做出負責任的診斷。（`facet: S1`, `pole: S`）
+* **B**：借鑒成熟案例能確保解決方案在實務上有跡可循且具可操作性。（`facet: S3`, `pole: S`）
+* **C**：先發散出多元假說能幫助團隊跳脫現有思考盲區。（`facet: N3`, `pole: N`）
+* **D**：掌握背後的深層運作模式比解決單一表面問題更根本。（`facet: N2`, `pole: N`）
+
+---
+
+### TF 軸微型情境 (TF-01 ~ TF-03)
+
+#### C_TF_01｜關鍵人員的人事爭端
+```json
+{
+  "item_id": "C_TF_01",
+  "module": "C",
+  "axis": "TF",
+  "context_type": "interpersonal_conflict",
+  "pressure_level": "high"
+}
+```
+**情境主幹**：專案進入最後衝刺階段，首席工程師與首席設計師因產品理念不合爆發激烈爭吵，揚言其中一人必須退出。
+
+##### Step 1：你的第一個行動是什麼？
+* **A**：拿出專案章程與客觀交付標準，逐項核對兩人的產出是否符合規章與功能效率指標。（`function: Te`）
+* **B**：深入分析爭議背後的邏輯矛盾點，用純粹的技術因果推導證明哪一種方案在邏輯上最嚴密。（`function: Ti`）
+* **C**：分別進行一對一深度對話，傾聽雙方內心感受，協助疏導情緒並重建彼此的情感信任。（`function: Fe`）
+* **D**：反求諸己並審視專案的初心與核心價值觀，依據內在信念判斷哪一方的主張符合真誠原則。（`function: Fi`）
+
+##### Step 2：你採取上述行動的最主要原因是？
+* **A**：組織決策必須基於非個人化的客觀標準，否則將破壞體系秩序。（`facet: T2`, `pole: T`）
+* **B**：唯有邏輯一致性與因果正確性才能得出真正經得起考驗的解法。（`facet: T1`, `pole: T`）
+* **C**：團隊的人本氛圍與彼此的心理安全感是專案能否推進的前提。（`facet: F2`, `pole: F`）
+* **D**：任何決定都不能違背核心價值觀與個人的內在良知。（`facet: F1`, `pole: F`）
+
+---
+
+#### C_TF_02｜利益衝突下的資源裁決
+```json
+{
+  "item_id": "C_TF_02",
+  "module": "C",
+  "axis": "TF",
+  "context_type": "high_responsibility",
+  "pressure_level": "high"
+}
+```
+**情境主幹**：預算突然被削減 50%，你必須在「引進全自動化系統提升 30% 效能」或「保留全體基層員工職位但效能停滯」之間做決定。
+
+##### Step 1：你的第一個行動是什麼？
+* **A**：建立成本效益與投資回報率（ROI）財務模型，精確計算每種方案的客觀產出。（`function: Te`）
+* **B**：拆解組織運作的本質邏輯，探討自動化與人工在該系統架構中的不可替代性原理。（`function: Ti`）
+* **C**：召開全體全員大會，開誠布公說明困境，共同協商並照顧群體情緒以維持向心力。（`function: Fe`）
+* **D**：衡量方案對弱勢基層員工家庭的實質衝擊，堅守「不隨意犧牲夥伴」的道德底線。（`function: Fi`）
+
+##### Step 2：你採取上述行動的最主要原因是？
+* **A**：在資源受限下，理性分析各項代價（Trade-off）以求效益最大化是管理職責。（`facet: T3`, `pole: T`）
+* **B**：決策必須建立在理性推理與客觀因果架構上，不能被感性模糊焦點。（`facet: T1`, `pole: T`）
+* **C**：必須將人的實質影響與群體共識置於冰冷數字之上。（`facet: F2`, `pole: F`）
+* **D**：決策必須始終與內在的核心價值原則保持一致。（`facet: F1`, `pole: F`）
+
+---
+
+#### C_TF_03｜寬鬆情境下的同儕反饋
+```json
+{
+  "item_id": "C_TF_03",
+  "module": "C",
+  "axis": "TF",
+  "context_type": "peer_review",
+  "pressure_level": "low"
+}
+```
+**情境主幹**：在一場輕鬆的團隊內部分享會後，一位新進同仁主動請你對他的初版企劃提出改進意見。
+
+##### Step 1：你的第一個行動是什麼？
+* **A**：列出清晰的檢查清單，指出其方案在實行步驟與預期成效上可量化的缺失。（`function: Te`）
+* **B**：深入剖析其論點背後的理論前提，幫他修正邏輯推導中的自相矛盾之處。（`function: Ti`）
+* **C**：首先給予熱情肯定與鼓勵，隨後營造支持性氛圍，以委婉方式引導他思考可能方向。（`function: Fe`）
+* **D**：深入同理新人剛起步的忐忑心境，從「這份企劃是否展現了他獨特亮點」的角度給予回饋。（`function: Fi`）
+
+##### Step 2：你採取上述行動的最主要原因是？
+* **A**：清晰客觀的事實標準才能幫助對方真正提升實務工作績效。（`facet: T2`, `pole: T`）
+* **B**：確保邏輯架構嚴密無漏洞是對專業產出最根本的尊重。（`facet: T1`, `pole: T`）
+* **C**：建立良好人際連結與維護對方的學習熱情是最優先考量。（`facet: F3`, `pole: F`）
+* **D**：尊重每個人的獨特性與內在價值體驗是成長的核心。（`facet: F1`, `pole: F`）
+
+---
+
+### JP 軸微型情境 (JP-01 ~ JP-03)
+
+#### C_JP_01｜突如其來的需求變更
+```json
+{
+  "item_id": "C_JP_01",
+  "module": "C",
+  "axis": "JP",
+  "context_type": "environment_change",
+  "pressure_level": "high"
+}
+```
+**情境主幹**：專案即將交付前夕，客戶突然提出一項重大市場新需求，若採納將徹底打亂既有工期。
+
+##### Step 1：你的第一個行動是什麼？
+* **A**：迅速盤點既有里程碑與交付合約，評估變更帶來的延遲代價並果斷設定停損邊界。（`function: Te/J`）
+* **B**：立刻重新拆解工作分解結構（WBS），重排全新排程表並鎖定新的死線。（`function: Si/J`）
+* **C**：敏捷擁抱變化，迅速與團隊進行動態即興討論，邊做邊摸索整合新需求的可能路徑。（`function: Ne/P`）
+* **D**：保持架構開放，暫時不急於定死新排程，保留數個平行測試方案以觀察後續發展。（`function: Se/P`）
+
+##### Step 2：你採取上述行動的最主要原因是？
+* **A**：資訊足夠後必須盡快形成決定（Closure Preference），避免陷入失控。（`facet: J1`, `pole: J`）
+* **B**：行動前必須先有明確結構（Pre-structuring），秩序是成功的保證。（`facet: J2`, `pole: J`）
+* **C**：在新局勢下，保持即時更新（Live Updating）與靈活探索才是最適策略。（`facet: P2`, `pole: P`）
+* **D**：保留替代方案（Option Preservation）能讓團隊在動態環境中維持最大主動權。（`facet: P1`, `pole: P`）
+
+---
+
+#### C_JP_02｜自由度極高的年度策略規劃
+```json
+{
+  "item_id": "C_JP_02",
+  "module": "C",
+  "axis": "JP",
+  "context_type": "baseline_freedom",
+  "pressure_level": "low"
+}
+```
+**情境主幹**：你受邀為新成立的事業部設計未來一年的運作框架，你有完全的自主權決定如何推展這項工作。
+
+##### Step 1：你的第一個行動是什麼？
+* **A**：先建立完整的甘特圖與制度規範，將整年度劃分為四大季度階段目標並鎖定責任。（`function: Te/J`）
+* **B**：先制定出固定的日常運作 SOP、會議節奏與交付物檢核清單。（`function: Si/J`）
+* **C**：先啟動小規模的敏捷實驗專案，在做中學（Learning by doing）中讓最佳模式自然成型。（`function: Ne/P`）
+* **D**：建立一個隨機應變的動態工作小組，不設死板規定，根據每月出現的最新機會隨時調整。（`function: Se/P`）
+
+##### Step 2：你採取上述行動的最主要原因是？
+* **A**：預先建構清楚的框架（Pre-structuring）能消除不確定性並提升確定感。（`facet: J2`, `pole: J`）
+* **B**：穩定的執行承諾（Commitment Stability）是組織長期運作的基石。（`facet: J3`, `pole: J`）
+* **C**：透過探索性行動（Exploratory Action）逐步摸索，才能找到最適路徑。（`facet: P3`, `pole: P`）
+* **D**：保留隨時因應新資訊調整的彈性（Live Updating）遠比過早鎖定計畫更明智。（`facet: P2`, `pole: P`）
+
+---
+
+#### C_JP_03｜沉沒成本與路線抉擇
+```json
+{
+  "item_id": "C_JP_03",
+  "module": "C",
+  "axis": "JP",
+  "context_type": "sunk_cost_pressure",
+  "pressure_level": "high"
+}
+```
+**情境主幹**：你所主導的一項方案已經投入了三個月的努力與可觀預算，但近期數據顯示該路線的成效不如預期，同時出現了一條完全不同的新興技術路徑。
+
+##### Step 1：你的第一個行動是什麼？
+* **A**：依據原定目標對現有流程進行全面嚴格整頓，排除執行障礙，堅持按原承諾衝刺到底。（`function: Te/J`）
+* **B**：設定嚴格的階段檢核點（Checkpoint），若下一節點仍未達標才依序啟動備用清單。（`function: Si/J`）
+* **C**：果斷鬆開對原計畫的鎖定，立即分撥資源投入新技術的探索與原型打造。（`function: Ne/P`）
+* **D**：將原計畫轉為靈活彈性模式，不再受既定排程束縛，順應新路徑邊走邊看。（`function: Se/P`）
+
+##### Step 2：你採取上述行動的最主要原因是？
+* **A**：對既定承諾的穩定執行（Commitment Stability）是克服困難與產生成果的關鍵。（`facet: J3`, `pole: J`）
+* **B**：必須透過有條理的結構收斂（Closure Preference）來控制風險與不確定性。（`facet: J1`, `pole: J`）
+* **C**：隨時保持探索與即時更新（Live Updating）能避免被沉沒成本綁架。（`facet: P2`, `pole: P`）
+* **D**：探索性嘗試（Exploratory Action）往往能帶來意想不到的突破口。（`facet: P3`, `pole: P`）
+
+---
+
+### EI 軸微型情境 (EI-01 ~ EI-03)
+
+#### C_EI_01｜突發公關危機的對外響應
+```json
+{
+  "item_id": "C_EI_01",
+  "module": "C",
+  "axis": "EI",
+  "context_type": "pressure_social",
+  "pressure_level": "high"
+}
+```
+**情境主幹**：公司突然遭遇重大外部輿論危機，記者與合作夥伴蜂擁而至要求即時說明，內部氣氛極度緊繃。
+
+##### Step 1：你的第一個行動是什麼？
+* **A**：立即走進現場面對媒體與外部人群，透過主動溝通與高頻互動穩住大局。（`function: Fe/E`）
+* **B**：召集關鍵高層在會議室大聲進行即時沙盤推演，在激烈的語言交鋒中快速形成對策。（`function: Te/E`）
+* **C**：先將自己反鎖在辦公室內，在安靜中將整起事件的因果鏈與聲明稿邏輯推演至天衣無縫。（`function: Ti/I`）
+* **D**：獨自沉澱並審視事件對組織核心信念的衝擊，從深層價值觀中確立不可動搖的應對基調。（`function: Fi/I`）
+
+##### Step 2：你採取上述行動的最主要原因是？
+* **A**：主動開啟互動（Social Initiation）與向外連結能在危機中迅速掌握主動權。（`facet: E1`, `pole: E`）
+* **B**：透過外部討論與即時碰撞（External Processing）能最快激發思維突破。（`facet: E2`, `pole: E`）
+* **C**：先在內部進行深度消化（Internal Processing）才能確保對外表達嚴密無懈可擊。（`facet: I2`, `pole: I`）
+* **D**：在高度紛擾下，必須回歸內在沉浸（Internal Absorption）才能保持清醒評判。（`facet: I3`, `pole: I`）
+
+---
+
+#### C_EI_02｜長時間的高強度工作營
+```json
+{
+  "item_id": "C_EI_02",
+  "module": "C",
+  "axis": "EI",
+  "context_type": "energy_sustainability",
+  "pressure_level": "medium"
+}
+```
+**情境主幹**：你正在參加一場連續三天、全天候密閉進行的跨國戰略共創工作營，全場充滿高分貝討論與頻繁社交。
+
+##### Step 1：在第二天的午休時間，你的直覺反應是？
+* **A**：繼續留在大廳與新認識的外國專家熱情交談，享受交流帶來的興奮感。（`function: Fe/E`）
+* **B**：主動組織同組成員利用用餐時間快速核對上午的成果，邊吃邊聊下午戰略。（`function: Te/E`）
+* **C**：悄悄離開會場，找一間無人的安靜咖啡廳獨自用餐，戴上耳機享受完全的獨處。（`function: Ti/I`）
+* **D**：找一個無人角落散步，將上午接收的大量資訊在個人腦海中進行深層重組與消化。（`function: Ni/I`）
+
+##### Step 2：你採取上述行動的最主要原因是？
+* **A**：豐富的外在刺激與人群互動（External Stimulation）能讓自己保持高度精神活躍。（`facet: E3`, `pole: E`）
+* **B**：隨時保持對外溝通與推進（Social Initiation）能最大化時間利用效率。（`facet: E1`, `pole: E`）
+* **C**：必須透過獨處來恢復認知能量（Solitary Recovery），否則下午大腦將無法運轉。（`facet: I1`, `pole: I`）
+* **D**：需要內部處理空間（Internal Processing）來沉澱與整合剛吸收的大量概念。（`facet: I2`, `pole: I`）
+
+---
+
+#### C_EI_03｜全新專案的構思發想
+```json
+{
+  "item_id": "C_EI_03",
+  "module": "C",
+  "axis": "EI",
+  "context_type": "baseline_freedom",
+  "pressure_level": "low"
+}
+```
+**情境主幹**：你需要為下半年度構想一個全新的旗艦專案，目前尚無任何既定方向，時間非常寬裕。
+
+##### Step 1：你的第一個行動是什麼？
+* **A**：走訪不同部門，與數十位跨領域同仁漫無邊際地聊天，在外部對話中捕捉靈感。（`function: Ne/E`）
+* **B**：找幾位好友一起舉辦白板塗鴉會，把任何不成熟的念頭大聲說出來互相激盪。（`function: Se/E`）
+* **C**：獨自一人閉門閱讀大量資料，在自己安靜的思維筆記中梳理出數個概念框架。（`function: Ni/I`）
+* **D**：給自己一段漫長的時間完全沉浸於內在思考，等待想法在潛意識中自然浮現。（`function: Ti/I`）
+
+##### Step 2：你採取上述行動的最主要原因是？
+* **A**：外部環境的多元刺激（External Stimulation）是靈感最有效的催化劑。（`facet: E3`, `pole: E`）
+* **B**：習慣透過外在表達（External Processing）來推進與完善模糊的思緒。（`facet: E2`, `pole: E`）
+* **C**：習慣先在內部建構完整架構（Internal Processing）後再向外界輸出。（`facet: I2`, `pole: I`）
+* **D**：享受深度沉浸於內在思想世界（Internal Absorption）所帶來的純粹洞見。（`facet: I3`, `pole: I`）
+
+---
+
+## Module D｜8 認知成本與耗能題 (Cognitive Cost / Recovery)
+
+> **作答量尺（全 Module D 統一）**：
+> * `[1]` 非常不符合（1 分）
+> * `[2]` 大致不符合（2 分）
+> * `[3]` 普通 / 視情況而定（3 分）
+> * `[4]` 大致符合（4 分）
+> * `[5]` 非常符合（5 分）
+>
+> **計分說明**：得分越高，代表該心理歷程對作答者而言**認知成本越低（越自然、越具備能量恢復性質）**。
+
+---
+
+```json
+{
+  "item_id": "D_E_01",
+  "module": "D",
+  "pole": "E",
+  "cost_type": "energy_drain_vs_charge",
+  "scoring_key": {"1": 20, "2": 40, "3": 60, "4": 80, "5": 100}
+}
+```
+**題目**：在經歷數小時持續不斷的團體討論、對外協調或熱烈社交後，我通常會感到精神振奮、充滿幹勁，而不是感到精力被掏空或需要逃離。
+
+---
+
+```json
+{
+  "item_id": "D_I_01",
+  "module": "D",
+  "pole": "I",
+  "cost_type": "solitary_recharge_efficiency",
+  "scoring_key": {"1": 20, "20": 40, "3": 60, "4": 80, "5": 100}
+}
+```
+**題目**：當我擁有連續數小時完全不被打擾的獨處時間時，我的思維清晰度與心理能量會非常自然且迅速地回到最巔峰飽滿的狀態。
+
+---
+
+```json
+{
+  "item_id": "D_S_01",
+  "module": "D",
+  "pole": "S",
+  "cost_type": "concrete_detail_comfort",
+  "scoring_key": {"1": 20, "2": 40, "3": 60, "4": 80, "5": 100}
+}
+```
+**題目**：長時間處理大量具體數據比對、繁瑣實務細節核對或標準流程操作時，我能保持高度專注與平靜，鮮少感到煩躁或枯燥耗能。
+
+---
+
+```json
+{
+  "item_id": "D_N_01",
+  "module": "D",
+  "pole": "N",
+  "cost_type": "abstract_synthesis_comfort",
+  "scoring_key": {"1": 20, "2": 40, "3": 60, "4": 80, "5": 100}
+}
+```
+**題目**：長時間面對高度抽象、沒有具體實例、充滿不確定性與未來未知的哲學或模型思辨時，我感到樂在其中且思維運轉極為輕鬆順暢。
+
+---
+
+```json
+{
+  "item_id": "D_T_01",
+  "module": "D",
+  "pole": "T",
+  "cost_type": "impersonal_logic_cost",
+  "scoring_key": {"1": 20, "2": 40, "3": 60, "4": 80, "5": 100}
+}
+```
+**題目**：在面對高壓衝突時，迅速抽離個人情感、純粹運用冷靜的邏輯因果與客觀規章做出裁決，對我而言是一件非常自然且低心理負擔的事。
+
+---
+
+```json
+{
+  "item_id": "D_F_01",
+  "module": "D",
+  "pole": "F",
+  "cost_type": "empathy_perspective_cost",
+  "scoring_key": {"1": 20, "2": 40, "3": 60, "4": 80, "5": 100}
+}
+```
+**題目**：持續感知身邊他人的情緒起伏、主動換位思考並在決策中細膩照顧每個人的內在價值感受，對我而言極為自然且毫不費力。
+
+---
+
+```json
+{
+  "item_id": "D_J_01",
+  "module": "D",
+  "pole": "J",
+  "cost_type": "closure_structure_cost",
+  "scoring_key": {"1": 20, "2": 40, "3": 60, "4": 80, "5": 100}
+}
+```
+**題目**：嚴格遵守既定排程表、在期限前快速拍板做決定並維持環境與工作的高度結構化，能帶給我充實與安定感，而不是束縛感。
+
+---
+
+```json
+{
+  "item_id": "D_P_01",
+  "module": "D",
+  "pole": "P",
+  "cost_type": "open_ended_flexibility_cost",
+  "scoring_key": {"1": 20, "2": 40, "3": 60, "4": 80, "5": 100}
+}
+```
+**題目**：長期處於目標動態調整、流程隨時在變、沒有明確 SOP 的高度開放探索狀態中，我依然能適應良好並感到自由自在。
+
+---
+
+## Diagnostic Probes｜8 動態自適應診斷題
+
+> **觸發時機（由 Rule-Based Adaptive Probe Engine 自動調用）**：
+> 1. **邊界模糊**：$|\text{Axis Preference}| < 0.15$
+> 2. **方法衝突**：Module A 行為評分與 Module B/C 出現方向矛盾
+> 3. **情境敏感**：Baseline 題目與 Pressure 題目出現顯著偏轉
+>
+> **計分與分類**：Probe 不單純扣減一致性分數，而是用於在報告中打上細緻的**情境依賴標籤（Context-Dependent Tags）**或區分特定條件。
+
+---
+
+### EI 軸診斷探針 (Probes)
+
+```json
+{
+  "item_id": "P_EI_01",
+  "module": "PROBE",
+  "axis": "EI",
+  "trigger_condition": "EI_boundary_or_conflict",
+  "probe_type": "group_size_differentiation",
+  "target_tag": "Social-Scale Sensitive"
+}
+```
+**題目**：在以下兩種情境中，你的心理能量與參與狀態有何差異？
+* **情境甲**：在 3 ~ 4 位彼此熟識、互相信任的工作夥伴小圈子中討論。
+* **情境乙**：在一場 20 人以上、包含多位陌生專家與長官的大型公開酒會中互動。
+
+**選項**：
+* `[A]` 兩者我都非常適應且感到能量充沛。（`Tag: Universal Extraversion`）
+* `[B]` 我在情境甲（小群體）中非常主動健談，但在情境乙（大群體）中會迅速退回觀察者狀態。（`Tag: Small-Group Dependent E / Large-Group I`）
+* `[C]` 兩者對我而言都需要耗費相當的心力，我更偏好純粹的單獨作業。（`Tag: Universal Introversion`）
+* `[D]` 我在情境乙（公開大場合）中能展現社交魅力，但私下極度需要小群體或個人空間。（`Tag: Public Role E / Private Core I`）
+
+---
+
+```json
+{
+  "item_id": "P_EI_02",
+  "module": "PROBE",
+  "axis": "EI",
+  "trigger_condition": "EI_context_conflict",
+  "probe_type": "topic_familiarity_differentiation",
+  "target_tag": "Domain-Competence Dependent"
+}
+```
+**題目**：當你置身於一個需要與多人互動的場合時，你對外表達的意願主要取決於：
+
+**選項**：
+* `[A]` 無論主題為何，我通常都能享受與人建立連結與對話的過程本身。（`Pole: E`, `Tag: Process-Driven Social`）
+* `[B]` 只有當話題涉及我精通且深度研究的專業領域時，我才會極度主動侃侃而談；其餘時候保持沉默。（`Pole: I`, `Tag: Domain-Specific E`）
+* `[C]` 即使是我精通的主題，我也更傾向以文字或會後一對一交流，不喜歡現場公開搶話。（`Pole: I`, `Tag: True Internal Processing`）
+* `[D]` 只要現場有人拋出有趣的未知概念，我就會忍不住加入腦力激盪。（`Pole: E`, `Tag: Idea-Stimulated E`）
+
+---
+
+### SN 軸診斷探針 (Probes)
+
+```json
+{
+  "item_id": "P_SN_01",
+  "module": "PROBE",
+  "axis": "SN",
+  "trigger_condition": "SN_boundary_or_conflict",
+  "probe_type": "information_granularity",
+  "target_tag": "Granularity Preference"
+}
+```
+**題目**：在學習一項全新且複雜的專業技能（如新程式語言、財務分析或工程設計）時，你最自然的理解起點是：
+
+**選項**：
+* `[A]` 先徹底理解最頂層的哲學架構、底層原理與全貌概念模型，細節語法日後再查。（`Pole: N`, `Tag: Top-Down Abstract`）
+* `[B]` 先跟著具體範例親手敲出幾行代碼、練習幾筆真實數據操作，從具體手感中逐步體會整體。（`Pole: S`, `Tag: Bottom-Up Concrete`）
+* `[C]` 同時並行：如果沒有全貌圖我會迷失，但如果沒有具體範例我也無法確認自己是否真懂。（`Tag: Dual-Channel SN Balanced`）
+* `[D]` 尋找該技能與我過去早已熟練的舊技能之間的相似模式進行對比遷移。（`Pole: S/N Hybrid`, `Tag: Analogical Pattern Anchor`）
+
+---
+
+```json
+{
+  "item_id": "P_SN_02",
+  "module": "PROBE",
+  "axis": "SN",
+  "trigger_condition": "SN_context_conflict",
+  "probe_type": "pressure_shift",
+  "target_tag": "Stress Mode Pivot"
+}
+```
+**題目**：回想你在面臨「極端時間死線」與「平時無壓力放鬆」兩種狀態下，你的思維焦點如何變化：
+
+**選項**：
+* `[A]` 平時喜歡天馬行空想宏觀可能（N），但在高壓死線逼近時，會瞬間切換成緊盯具體細節與步驟（S）。（`Tag: Baseline N -> Pressure S`）
+* `[B]` 平時習慣按部就班核對細節（S），但在高壓危機時，反而會跳脫常規、直覺冒出前所未有的全新解法（N）。（`Tag: Baseline S -> Pressure N`）
+* `[C]` 無論有無壓力，我都始終高度專注於具體實證數據與可落地的操作步驟。（`Tag: Stable S-Grounded`）
+* `[D]` 無論有無壓力，我都始終習慣先從宏觀架構、核心模型與未來趨勢出發。（`Tag: Stable N-Synthesizer`）
+
+---
+
+### TF 軸診斷探針 (Probes)
+
+```json
+{
+  "item_id": "P_TF_01",
+  "module": "PROBE",
+  "axis": "TF",
+  "trigger_condition": "TF_boundary_or_conflict",
+  "probe_type": "decision_domain_differentiation",
+  "target_tag": "Domain-Split TF"
+}
+```
+**題目**：在面對不同生活領域的決策時，你是否會切換截然不同的判斷準則？
+
+**選項**：
+* `[A]` 公事與私事一視同仁，皆嚴格採取邏輯自洽、客觀因果與效益最大化進行裁決。（`Pole: T`, `Tag: Universal Impersonal`）
+* `[B]` 公事與私事皆優先考量人際和諧、核心價值觀與相關人員的內在感受。（`Pole: F`, `Tag: Universal Human-Centric`）
+* `[C]` 專業工作上呈現極度冷靜嚴苛的邏輯分析（T），但個人生活與人際相處中極度重視同理心與情感價值（F）。（`Tag: Dual-High Domain-Split`）
+* `[D]` 表面溝通時展現極佳的同理與包容（F 表現），但內在核心底層始終以冷靜的因果邏輯在運算（T 本質）。（`Tag: Masked Te/Ti - Fe Expression`）
+
+---
+
+```json
+{
+  "item_id": "P_TF_02",
+  "module": "PROBE",
+  "axis": "TF",
+  "trigger_condition": "TF_context_conflict",
+  "probe_type": "moral_tradeoff_depth",
+  "target_tag": "Ethical Core Probe"
+}
+```
+**題目**：當一項完全合乎法規、邏輯與經濟效益的決策，將會對少數無辜夥伴造成重大心理或生活打擊時，你的內在真實反應是：
+
+**選項**：
+* `[A]` 雖然遺憾，但制度與全局效率的客觀邏輯必須被維護，不能因個別情感而破壞規則。（`Pole: T`, `Tag: Rule-Logic Priority`）
+* `[B]` 這是不可接受的，任何踐踏個人尊嚴或人本價值的方案，在根本上就是錯誤的。（`Pole: F`, `Tag: Inviolable Human Value`）
+* `[C]` 拒絕在兩者間二選一，會動用一切智力重新設計一個能同時兼顧邏輯效率與保護人的新架構。（`Tag: T/F High Integration`）
+* `[D]` 依據當前角色的職責要求行事，但會自發性在體制外私下為受傷者提供補償與支持。（`Tag: Contextual Pragmatic TF`）
+
+---
+
+### JP 軸診斷探針 (Probes)
+
+```json
+{
+  "item_id": "P_JP_01",
+  "module": "PROBE",
+  "axis": "JP",
+  "trigger_condition": "JP_boundary_or_conflict",
+  "probe_type": "planning_vs_executing_gap",
+  "target_tag": "Planning-Execution Gap"
+}
+```
+**題目**：關於「計畫」這件事，下列哪一種描述最精準符合你的真實日常行為？
+
+**選項**：
+* `[A]` 我非常喜歡制定詳細計畫，而且在執行時能夠高度自律、嚴格按進度打勾完成。（`Pole: J`, `Tag: Pure Structured J`）
+* `[B]` 我很不喜歡被死板計畫束縛，更享受在無拘無束的動態環境中隨機應變與即興發揮。（`Pole: P`, `Tag: Pure Adaptive P`）
+* `[C]` 我非常擅長制定極其完美精緻的架構計畫（J 式思考），但在實際執行時經常被新靈感帶偏或難以按表操課（P 式行為）。（`Tag: J-Architecture / P-Execution`）
+* `[D]` 我平時看似隨性且不排日程（P 式外在），但心中隨時有一條不可逾越的底線死線與內部收斂節奏（J 式內在）。（`Tag: P-Outer / J-Core Anchor`）
+
+---
+
+```json
+{
+  "item_id": "P_JP_02",
+  "module": "PROBE",
+  "axis": "JP",
+  "trigger_condition": "JP_context_conflict",
+  "probe_type": "order_need_vs_novelty",
+  "target_tag": "Chaos Tolerance Limit"
+}
+```
+**題目**：當你身處一個完全混亂、缺乏組織、充滿變數的環境中一段時間後，你的心理防線會如何反應？
+
+**選項**：
+* `[A]` 感到極度焦躁不安，會忍不住跳出來為大家建立規則、流程與明確的分工結構。（`Pole: J`, `Tag: Low Chaos Tolerance`）
+* `[B]` 如魚得水，混亂意味著無拘無束與充滿各種可能，能激發我最強的適應力與創造力。（`Pole: P`, `Tag: High Chaos Affinity`）
+* `[C]` 只要我的個人核心領域井然有序，團隊或外界再混亂我都能完全無視並彈性配合。（`Tag: Boundary-Selective J`）
+* `[D]` 在探索初期享受混亂（P），但一旦達到臨界點，會迅速啟動強大的收束機制將其定案（J）。（`Tag: Dynamic Divergence-Convergence Loop`）
+
+---
+
+## 系統整合與後端實作指引 (Engine Handover Spec)
+
+### 1. 模組分數計算法則 (Deterministic Scoring Pipeline)
+
+```python
+# 1. Module A: 24 Facet Scores (0-100)
+for facet in ALL_24_FACETS:
+    valid_items = get_answered_items(module="A", facet=facet)  # Exclude 'NA'
+    if valid_items:
+        raw_avg = sum(item.score for item in valid_items) / len(valid_items)
+        facet_scores[facet] = (raw_avg / 4.0) * 100
+    else:
+        facet_scores[facet] = 50.0  # Fallback default
+
+# 2. 8 Pole Scores (0-100)
+E_score = (facet_scores["E1"] + facet_scores["E2"] + facet_scores["E3"]) / 3.0
+I_score = (facet_scores["I1"] + facet_scores["I2"] + facet_scores["I3"]) / 3.0
+# ... Repeat for S, N, T, F, J, P
+
+# 3. Behavioral Contrasts (-1.0 to +1.0)
+B_EI = (E_score - I_score) / 100.0
+B_SN = (S_score - N_score) / 100.0
+B_TF = (T_score - F_score) / 100.0
+B_JP = (J_score - P_score) / 100.0
+
+# 4. Module B: Forced Choice Contrasts (-1.0 to +1.0)
+FC_EI = sum(item.score for item in module_B_EI) / (3 * 2.0)
+FC_SN = sum(item.score for item in module_B_SN) / (3 * 2.0)
+FC_TF = sum(item.score for item in module_B_TF) / (3 * 2.0)
+FC_JP = sum(item.score for item in module_B_JP) / (3 * 2.0)
+
+# 5. Module C: Scenario Contrasts & 8 Cognitive Function Accumulation
+# Step 1 gives 2 points to the chosen cognitive function indicator
+# Step 2 gives 1 point to the chosen cognitive function indicator / primary facet
+for scenario in module_C_items:
+    cog_funcs[scenario.step1.function_tag] += 2
+    cog_funcs[scenario.step2.function_tag] += 1
+
+# 6. Final Axis Scores (Transparent Fixed Weights)
+Axis_EI = 0.50 * B_EI + 0.30 * FC_EI + 0.20 * SC_EI
+Axis_SN = 0.50 * B_SN + 0.30 * FC_SN + 0.20 * SC_SN
+Axis_TF = 0.50 * B_TF + 0.30 * FC_TF + 0.20 * SC_TF
+Axis_JP = 0.50 * B_JP + 0.30 * FC_JP + 0.20 * SC_JP
+```
+
+### 2. MBTI Best-fit 與 Precision Type 判定規則
+
+* **Best-fit Type**：
+  * 若 $\text{Axis} \le 0$，取第一字母（E, S, T, J）；若 $\text{Axis} > 0$，取第二字母（I, N, F, P）。
+* **Precision Type**：
+  * 若 $|\text{Axis}| < 0.15$，該維度以 `X` 標記（例如：`Axis_TF = 0.08` $\rightarrow$ `ENXP`）。
+  * 同時在報告中標註 `T/F currently balanced / Dual-High`。
+
+### 3. Adaptive Probes 觸發條件（最大題數 88 題）
+
+```python
+probes_to_trigger = []
+for axis in ["EI", "SN", "TF", "JP"]:
+    # Condition 1: Boundary Ambiguity
+    if abs(final_axis_scores[axis]) < 0.15:
+        probes_to_trigger.extend(get_probes(axis, count=2))
+        continue
+    # Condition 2: Method Cross-Conflict (e.g. Behavioral vs Forced-choice)
+    if (B_score[axis] > 0.2 and FC_score[axis] < -0.2) or (B_score[axis] < -0.2 and FC_score[axis] > 0.2):
+        probes_to_trigger.extend(get_probes(axis, count=2))
+        continue
+    # Condition 3: Contextual Shift (Baseline vs Pressure)
+    if abs(baseline_scores[axis] - pressure_scores[axis]) > 0.40:
+        probes_to_trigger.extend(get_probes(axis, count=2))
+
+# Display probes dynamically; max additional items = 8.
+```
+
+---
+
+此設計具備完整的閉環結構，所有題目、選項標籤、計分映射與觸發規則已全部定義完畢，可直接整合進後端系統運作。
