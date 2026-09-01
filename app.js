@@ -881,7 +881,7 @@ function renderOptionButtons(options, selected, step = null) {
     const keyMode = step !== null || option.pole !== undefined || option.value === null || typeof option.value === "string";
     const optionValue = keyMode ? option.key : option.value;
     const isSelected = keyMode ? String(selected ?? "") === String(option.key) : selected === optionValue;
-    return `<button class="option-btn ${isSelected ? "is-selected" : ""}" data-value="${escapeHtml(optionValue)}" data-mode="${keyMode ? "key" : "number"}" ${step !== null ? `data-step="${step}"` : ""}><span class="option-label">${escapeHtml(option.label)}</span><span class="option-key">${escapeHtml(option.key)}</span></button>`;
+    return `<button class="option-btn ${isSelected ? "is-selected" : ""}" data-value="${escapeHtml(optionValue)}" data-mode="${keyMode ? "key" : "number"}" ${step !== null ? `data-step="${step}"` : ""}><span class="option-label">${escapeHtml(option.label)}</span></button>`;
   }).join("");
 }
 
@@ -934,7 +934,7 @@ function renderQuiz() {
   const options = renderOptionButtons(item.options, selectedValue);
   const optionIntro = item.format === "forced_choice" ? `<span class="choice-a">A</span> ${escapeHtml(item.optionA)}<br /><span class="choice-b">B</span> ${escapeHtml(item.optionB)}` : "";
   const step2Options = item.format === "micro_sim" && response?.step1 && item.step2Options.some((option) => option.key.startsWith(`${response.step1}`)) ? item.step2Options.filter((option) => option.key.startsWith(`${response.step1}`)) : item.step2Options;
-  const optionBlock = item.format === "micro_sim" ? `<div class="sim-step"><div class="sim-step-label"><b>Step 1</b><span>First Action · 第一個行動</span></div><div class="options" role="group" aria-label="Step 1 選項">${renderOptionButtons(item.step1Options, response?.step1, 1)}</div></div><div class="sim-step ${response?.step1 ? "" : "is-muted"}"><div class="sim-step-label"><b>Step 2</b><span>Primary Rationale · 最主要原因</span></div><div class="options" role="group" aria-label="Step 2 選項">${renderOptionButtons(step2Options, response?.step2, 2)}</div></div>` : `<div class="options" role="group" aria-label="回答選項">${options}</div>`;
+  const optionBlock = item.format === "micro_sim" ? `<div class="sim-step"><div class="sim-step-label"><b>Step 1</b></div><div class="options" role="group" aria-label="Step 1 選項">${renderOptionButtons(item.step1Options, response?.step1, 1)}</div></div>${response?.step1 ? `<div class="sim-step"><div class="sim-step-label"><b>Step 2</b></div><div class="options" role="group" aria-label="Step 2 選項">${renderOptionButtons(step2Options, response?.step2, 2)}</div></div>` : ""}` : `<div class="options" role="group" aria-label="回答選項">${options}</div>`;
   app.innerHTML = `<section class="view quiz-view">
     ${state.probeMode && state.currentIndex === state.itemOrder.length - ITEM_BANK.probes.filter((probe) => state.itemOrder.some((i) => i.item_id === probe.item_id)).length ? `<div class="welcome-banner"><span class="banner-mark">NEW</span><div><strong>加入少量確認題</strong><p>你的初步證據在部分軸向接近邊界或呈現不同情境反應，接下來最多 8 題只用來釐清這些差異。</p></div></div>` : ""}
     <div class="quiz-head"><div><h1>Core measurement</h1><p>${state.probeMode ? "Dynamic confirmation · 情境差異釐清" : "Behavioral + trade-off + context evidence"}</p></div><div class="quiz-count">${String(state.currentIndex + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}</div></div>
@@ -942,11 +942,10 @@ function renderQuiz() {
     <div class="quiz-layout">
       <article class="question-card">
         <div class="question-meta"><span class="question-format">${escapeHtml(format)}</span><span>evidence · ${String(state.currentIndex + 1).padStart(2, "0")}</span></div>
-        <p class="question-context">${item.format === "behavior" ? "請以最近真實行為回答" : item.format === "forced_choice" ? "兩種方法都有優點" : item.format === "micro_sim" ? "先選第一個行動，再選最主要原因" : item.format === "cost" ? "請評估這個心理歷程對你的自然程度" : "釐清你的情境敏感度"}</p>
         <h2 class="question-title">${escapeHtml(item.stem)}</h2>
-        ${item.format === "forced_choice" ? `<p class="question-anchor choice-copy">${optionIntro}</p>` : item.format === "micro_sim" ? `<p class="question-anchor">${escapeHtml(item.anchor)}</p>` : `<p class="question-anchor">${escapeHtml(item.anchor)}</p>`}
+        ${item.format === "forced_choice" ? `<div class="choice-copy">${optionIntro}</div>` : ""}
         ${optionBlock}
-        <div class="quiz-foot"><button class="btn-quiet" id="prevButton" ${state.currentIndex === 0 ? "disabled" : ""}>← 上一題</button><span class="keyboard-note">可使用 1–5 選擇 · Enter 下一題</span><button class="btn-primary" id="nextButton">${state.currentIndex === total - 1 ? (state.probeMode ? "查看結果" : "完成核心測量") : "下一題 →"}</button></div>
+        <div class="quiz-foot"><button class="btn-quiet" id="prevButton" ${state.currentIndex === 0 ? "disabled" : ""}>← 上一題</button><span></span><button class="btn-primary" id="nextButton">${state.currentIndex === total - 1 ? (state.probeMode ? "查看結果" : "完成核心測量") : "下一題 →"}</button></div>
       </article>
       <aside class="quiz-side">
         <div class="side-panel"><h2>Evidence mix</h2><p>每一軸都由三種證據組成。完成後系統才會計算 relative preference，不會由單題決定類型。</p></div>
@@ -1111,8 +1110,16 @@ document.addEventListener("keydown", (event) => {
   if (state.view !== "quiz") return;
   if (/^[1-5]$/.test(event.key)) {
     const item = state.itemOrder[state.currentIndex];
-    if (item?.format === "behavior") answerCurrent(item.options.find((option) => option.key === event.key)?.value);
-    else if (item?.format === "forced_choice" || item?.format === "cost") answerCurrent(item.options[Number(event.key) - 1]?.value);
+    const optionIndex = Number(event.key) - 1;
+    if (item?.format === "micro_sim" && optionIndex < 2) {
+      const response = state.responses[item.item_id];
+      if (!response?.step1) answerCurrent(item.step1Options?.[optionIndex]?.key, 1);
+      else {
+        const step2Options = item.step2Options?.some((option) => option.key.startsWith(`${response.step1}`)) ? item.step2Options.filter((option) => option.key.startsWith(`${response.step1}`)) : item.step2Options;
+        answerCurrent(step2Options?.[optionIndex]?.key, 2);
+      }
+    } else if (item?.format === "behavior") answerCurrent(item.options.find((option) => option.key === event.key)?.value);
+    else if (item?.format === "forced_choice" || item?.format === "cost") answerCurrent(item.options[optionIndex]?.value);
   }
   if (event.key === "Enter") moveNext();
   if (event.key === "ArrowLeft") movePrevious();

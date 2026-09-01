@@ -100,17 +100,16 @@ h1, h2, h3, p { margin: 0; }
 .question-card { background: var(--white); border: 1px solid var(--line); box-shadow: var(--shadow); padding: clamp(25px, 5vw, 54px); min-height: 530px; display: flex; flex-direction: column; }
 .question-meta { display: flex; justify-content: space-between; align-items: center; color: #899287; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
 .question-format { color: var(--ink); border-bottom: 2px solid var(--accent); padding-bottom: 4px; }
-.question-context { font-size: 12px; margin-top: 40px; color: #70806f; }
-.question-title { font-size: clamp(24px, 3vw, 39px); line-height: 1.35; letter-spacing: -.04em; margin-top: 12px; max-width: 790px; }
-.question-anchor { color: var(--muted); font-size: 13px; line-height: 1.7; margin-top: 20px; }
+.question-title { font-size: 31px; font-weight: 500; line-height: 1.45; letter-spacing: 0; margin-top: 36px; max-width: 790px; }
+.choice-copy { color: var(--ink); font-size: 19px; font-weight: 500; line-height: 1.75; margin-top: 24px; }
+.choice-a, .choice-b { display: inline-block; min-width: 26px; font-family: "DM Mono", monospace; font-size: 16px; font-weight: 500; }
+.choice-b { margin-top: 8px; }
 .options { display: grid; gap: 9px; margin-top: auto; padding-top: 32px; }
-.option-btn { width: 100%; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 16px; text-align: left; color: var(--ink); transition: border .18s ease, background .18s ease, transform .18s ease; }
+.option-btn { width: 100%; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: flex; align-items: center; justify-content: flex-start; gap: 16px; text-align: left; color: var(--ink); transition: border .18s ease, background .18s ease, transform .18s ease; }
 .option-btn:hover { border-color: #8a9d76; transform: translateX(2px); }
 .option-btn.is-selected { border-color: var(--ink); background: #eef6d7; box-shadow: inset 4px 0 var(--accent-deep); }
 .option-label { font-size: 13px; line-height: 1.5; }
-.option-key { font-family: "DM Mono", monospace; color: #869085; font-size: 11px; flex-shrink: 0; }
 .sim-step { border-top: 1px solid var(--line); margin-top: 22px; padding-top: 15px; }
-.sim-step.is-muted { opacity: .48; }
 .sim-step-label { display: flex; align-items: baseline; gap: 10px; color: var(--muted); font-size: 11px; letter-spacing: .03em; }
 .sim-step-label b { color: var(--ink); font-family: "DM Mono", monospace; font-size: 12px; }
 .sim-step .options { margin-top: 10px; padding-top: 0; }
@@ -127,7 +126,6 @@ h1, h2, h3, p { margin: 0; }
 .quiz-foot { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 14px; border-top: 1px solid var(--line); margin-top: 26px; padding-top: 17px; }
 .quiz-foot .btn-quiet { min-height: 40px; }
 .quiz-foot .btn-primary, .quiz-foot .btn-quiet { white-space: nowrap; }
-.keyboard-note { color: #9ca59c; font-size: 11px; text-align: center; }
 
 .result-view { padding: 48px 0 90px; }
 .result-hero { display: grid; grid-template-columns: 1.1fr .9fr; gap: 30px; align-items: stretch; margin-bottom: 52px; }
@@ -282,13 +280,14 @@ h1, h2, h3, p { margin: 0; }
   .quiz-view { padding-top: 23px; }
   .quiz-head { align-items: start; flex-direction: column; gap: 9px; }
   .question-card { min-height: 560px; padding: 24px 19px; }
-  .question-context { margin-top: 31px; }
-  .question-title { font-size: 25px; }
+  .question-title { font-size: 22px; margin-top: 31px; }
+  .choice-copy { font-size: 16px; line-height: 1.75; margin-top: 20px; }
+  .choice-a, .choice-b { font-size: 14px; }
   .options { padding-top: 25px; }
   .quiz-side { grid-template-columns: 1fr; }
   .side-panel:last-child { grid-column: auto; }
   .quiz-foot { grid-template-columns: 1fr 1fr; gap: 9px; }
-  .quiz-foot .keyboard-note { display: none; }
+  .quiz-foot > span { display: none; }
   .quiz-foot .btn-quiet, .quiz-foot .btn-primary { width: 100%; }
   .result-view { padding-top: 32px; }
   .result-title { font-size: clamp(69px, 22vw, 112px); }
