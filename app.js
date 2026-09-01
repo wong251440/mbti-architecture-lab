@@ -2,6 +2,8 @@
 const SCORING_VERSION = "1.1";
 const QUESTION_BANK_VERSION = "DCA-v2.1";
 const QUESTION_BANK_FILE = "題庫2.txt";
+const RESULT_COPY_FILE = "結果文字.txt";
+const RESULT_COPY_VERSION = "DCA-Report-v1.0-candidate-zhHant";
 const STORAGE_KEY = "mbti-architecture-lab-v1";
 
 const axisMeta = {
@@ -186,6 +188,8 @@ function makeItems() {
 
 let ITEM_BANK = makeItems();
 let questionBankReady = false;
+let RESULT_COPY = {};
+let resultCopyReady = false;
 
 function stripItemTag(text) {
   return String(text || "").replace(/\s*（\s*(?:`?(?:function|facet|Pole|Tag)\b)[\s\S]*?）\s*$/, "").trim();
@@ -208,6 +212,92 @@ function cleanVisibleText(text) {
     .replace(/\*\*/g, "")
     .replace(/`([^`]+)`/g, "$1")
     .trim();
+}
+
+function trimResultCopyTail(text) {
+  const source = String(text || "").replace(/\r/g, "");
+  const separator = source.search(/\n---\s*(?:\n|$)/);
+  const note = source.search(/\n# (?:最小後端整合資料|建議前端最終顯示層級|最後一條 Copy Rule)/);
+  const nextTemplate = source.search(/\n## (?!\s*$)/);
+  const cuts = [separator, note, nextTemplate].filter((value) => value >= 0);
+  const cut = cuts.length ? Math.min(...cuts) : source.length;
+  return source.slice(0, cut).trim();
+}
+
+function parseResultCopyBlock(itemId, raw) {
+  let source = trimResultCopyTail(raw);
+  if (itemId === "function_secondary_intro") source = source.replace(/\n後端只替換功能名稱，?不需另寫 8 段。[\s\S]*$/i, "").trim();
+  const fields = {};
+  const fieldPattern = /^(?:\*\*(特質名稱|盲區名稱|優勢|潛在代價|行為表現|隱藏風險|最佳發揮條件|自我覺察)(?:：|:)?\*\*|###\s*(特質名稱|盲區名稱))\s*$/gm;
+  const fieldMatches = [...source.matchAll(fieldPattern)];
+  fieldMatches.forEach((match, index) => {
+    const start = match.index + match[0].length;
+    const end = index + 1 < fieldMatches.length ? fieldMatches[index + 1].index : source.length;
+    fields[match[1] || match[2]] = source.slice(start, end).trim();
+  });
+
+  const labelledTitle = source.match(/^###\s*標題\s*\n([\s\S]*?)(?=\n###\s*內文|$)/m);
+  const labelledBody = source.match(/^###\s*內文\s*\n([\s\S]*)$/m);
+  const headings = [...source.matchAll(/^###\s+([^\n]+)$/gm)];
+  let title = labelledTitle?.[1]?.trim() || "";
+  let body = labelledBody?.[1]?.trim() || "";
+  if (!title && headings.length && headings[0][1] !== "特質名稱" && headings[0][1] !== "盲區名稱") {
+    title = headings[0][1].trim();
+    const bodyStart = headings[0].index + headings[0][0].length;
+    body = source.slice(bodyStart).trim();
+  }
+  if (!body && !labelledBody && !headings.length && !Object.keys(fields).length) body = source;
+  if (!body && Object.keys(fields).length) body = source;
+  return { itemId, title, body, fields, raw: source };
+}
+
+function parseResultCopy(markdown) {
+  const source = String(markdown || "").replace(/\r/g, "");
+  const markers = [...source.matchAll(/^`(?:text_id\s*=\s*)?([A-Za-z0-9_]+)`\s*$/gm)];
+  const copies = {};
+  markers.forEach((marker, index) => {
+    const start = marker.index + marker[0].length;
+    const end = index + 1 < markers.length ? markers[index + 1].index : source.length;
+    copies[marker[1]] = parseResultCopyBlock(marker[1], source.slice(start, end));
+  });
+  return copies;
+}
+
+function interpolateCopy(text, variables = {}) {
+  return String(text || "").replace(/\{\{([A-Za-z0-9_]+)\}\}/g, (_, key) => variables[key] === undefined || variables[key] === null ? "" : String(variables[key]));
+}
+
+function copyMarkdownHtml(text, variables = {}) {
+  const paragraphs = interpolateCopy(text, variables).split(/\n{2,}/).map((part) => part.trim()).filter(Boolean);
+  return paragraphs.map((part) => {
+    const escaped = escapeHtml(part).replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>").replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\n/g, "<br />");
+    return `<p>${escaped}</p>`;
+  }).join("");
+}
+
+function copyEntry(itemId, variables = {}) {
+  const entry = RESULT_COPY[itemId];
+  if (!entry) return { itemId, title: "", body: "", fields: {} };
+  return {
+    ...entry,
+    title: interpolateCopy(entry.title, variables),
+    body: interpolateCopy(entry.body, variables),
+    fields: Object.fromEntries(Object.entries(entry.fields || {}).map(([key, value]) => [key, interpolateCopy(value, variables)]))
+  };
+}
+
+async function hydrateResultCopy() {
+  try {
+    const response = await fetch(RESULT_COPY_FILE, { cache: "no-store" });
+    if (!response.ok) throw new Error(`結果文字載入失敗：${response.status}`);
+    const parsed = parseResultCopy(await response.text());
+    if (Object.keys(parsed).length < 200) throw new Error("結果文字庫不完整");
+    RESULT_COPY = parsed;
+    resultCopyReady = true;
+    render();
+  } catch (error) {
+    console.warn(error);
+  }
 }
 
 function extractVisibleTitle(text) {
@@ -564,6 +654,54 @@ function movePrevious() {
   render();
 }
 
+function poleForAxisValue(axis, value) {
+  if (value > 0.15) return axisMeta[axis]?.positive || null;
+  if (value < -0.15) return axisMeta[axis]?.negative || null;
+  return null;
+}
+
+function facetLevel(score) {
+  if (score < 40) return "L1";
+  if (score < 60) return "L2";
+  if (score < 80) return "L3";
+  return "L4";
+}
+
+function buildDynamicProfiles(channels, scenarioContext) {
+  return Object.keys(axisMeta).map((axis) => {
+    const contextValues = scenarioContext[axis] || {};
+    const baseline = contextValues.free === null || contextValues.free === undefined ? channels[axis].relative : contextValues.free;
+    const pressure = contextValues.pressure === null || contextValues.pressure === undefined ? channels[axis].relative : contextValues.pressure;
+    const delta = pressure - baseline;
+    const baselinePole = poleForAxisValue(axis, baseline);
+    const pressurePole = poleForAxisValue(axis, pressure);
+    const meaningfulShift = Math.abs(delta) >= 0.15;
+    let copyId = "dynamic_stable";
+    if (meaningfulShift && baselinePole && pressurePole && baselinePole !== pressurePole) copyId = `shift_${baselinePole}_to_${pressurePole}`;
+    else if (meaningfulShift && (pressurePole || baselinePole)) copyId = `boost_${pressurePole || baselinePole}_pressure`;
+    return { axis, baseline, pressure, delta, baselinePole, pressurePole, meaningfulShift, copyId };
+  });
+}
+
+function axisState(result, axis) {
+  const meta = axisMeta[axis];
+  const a = result.poleScores[meta.positive];
+  const b = result.poleScores[meta.negative];
+  if ((result.contextSensitivity[axis] || 0) >= 25) return "context_sensitive";
+  if (Math.min(a, b) >= 65) return "dual_high";
+  if (Math.max(a, b) <= 40) return "dual_low";
+  if (Math.abs(a - b) <= 15) return "balanced";
+  return a >= b ? `polarized_${meta.positive}` : `polarized_${meta.negative}`;
+}
+
+function contextForPole(result, axis, pole) {
+  const contexts = Object.entries(result.scenarioContext[axis] || {}).filter(([, value]) => value !== null && value !== undefined);
+  if (!contexts.length) return "—";
+  const sign = pole === axisMeta[axis].positive ? 1 : -1;
+  contexts.sort((a, b) => sign * b[1] - sign * a[1]);
+  return contextZh(contexts[0][0]);
+}
+
 function finishCoreOrResult() {
   const scored = scoreAll(state.itemOrder, state.responses);
   if (!state.probeMode) {
@@ -655,9 +793,15 @@ function scoreAll(items, responses) {
   });
   const quality = responseQuality(items, responses);
   const confidence = dynamicAxes.length >= 3 || quality.consistency < 55 ? "Low" : dynamicAxes.length || quality.consistency < 78 ? "Medium" : "High";
+  const confidenceScore = Math.round((quality.consistency * 0.6) + (quality.attention * 0.4));
   const precisionType = Object.keys(axisMeta).map((axis) => axes[axis] > 0.15 ? axisMeta[axis].positive : axes[axis] < -0.15 ? axisMeta[axis].negative : "X").join("");
   const bestFit = Object.keys(axisMeta).map((axis) => axes[axis] > 0 ? axisMeta[axis].positive : axisMeta[axis].negative).join("");
-  return { facetScores, poleScores, costScores, costRecovery, channels, axes, profiles, architecture, scenarioContext, contextSensitivity, dynamicAxes, quality, confidence, precisionType, bestFit, scoringVersion: SCORING_VERSION, cognitiveFunctions: cognitiveFunctionScores(items, responses), cognitiveFacets: cognitiveFacetScores(items, responses) };
+  const cognitiveFunctions = cognitiveFunctionScores(items, responses);
+  const functionRankings = Object.entries(cognitiveFunctions).sort((a, b) => b[1] - a[1]).map(([functionName, score]) => ({ functionName, score }));
+  const dynamicProfiles = buildDynamicProfiles(channels, scenarioContext);
+  const axisStates = Object.fromEntries(Object.keys(axisMeta).map((axis) => [axis, axisState({ poleScores, contextSensitivity }, axis)]));
+  const boundaryAxes = Object.keys(axisMeta).filter((axis) => Math.abs(axes[axis]) <= 0.15);
+  return { facetScores, poleScores, costScores, costRecovery, channels, axes, profiles, architecture, scenarioContext, contextSensitivity, dynamicAxes, dynamicProfiles, axisStates, boundaryAxes, quality, confidence, confidenceScore, precisionType, bestFit, scoringVersion: SCORING_VERSION, resultCopyVersion: RESULT_COPY_VERSION, cognitiveFunctions, functionRankings, cognitiveFacets: cognitiveFacetScores(items, responses) };
 }
 
 function microScenarioScore(item, response) {
@@ -826,22 +970,99 @@ function renderLiveAxes() {
   return Object.keys(axisMeta).map((axis) => `<div class="axis-mini"><span>${axis}</span><span>${scores[axis] !== undefined ? fmt(scores[axis]) : "—"}</span></div>`).join("");
 }
 
+function copyInlineHtml(text, variables = {}) {
+  return escapeHtml(interpolateCopy(text, variables)).replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>").replace(/`([^`]+)`/g, "<code>$1</code>");
+}
+
+function renderCopyPanel(copy, className = "") {
+  if (!copy || (!copy.title && !copy.body)) return "";
+  return `<div class="copy-panel ${className}">${copy.title ? `<h3>${copyInlineHtml(copy.title)}</h3>` : ""}${copyMarkdownHtml(copy.body)}</div>`;
+}
+
+function resultCopyVariables(result) {
+  const boundaries = result.boundaryAxes || Object.keys(axisMeta).filter((axis) => Math.abs(result.axes[axis]) <= 0.15);
+  const stable = Object.keys(axisMeta).filter((axis) => !boundaries.includes(axis)).sort((a, b) => Math.abs(result.axes[b]) - Math.abs(result.axes[a]));
+  const secondary = result.functionRankings?.[1];
+  return {
+    Best_Fit_Type: result.bestFit,
+    Precision_Type: result.precisionType,
+    Boundary_Axis_1: boundaries[0] || "—",
+    Boundary_Axis_2: boundaries[1] || "—",
+    Stable_Axis: stable[0] || "—",
+    Confidence_Score: result.confidenceScore,
+    Secondary_Function: secondary?.functionName || "—",
+    Secondary_Function_Threshold: "1 分"
+  };
+}
+
+function renderDynamicCopy(result) {
+  const profiles = (result.dynamicProfiles || []).filter((profile) => profile.meaningfulShift);
+  const entries = profiles.length ? profiles : [{ copyId: "dynamic_stable", axis: null }];
+  return `<div class="dynamic-copy-grid">${entries.map((profile) => {
+    const copy = copyEntry(profile.copyId, resultCopyVariables(result));
+    const axisLabelText = profile.axis ? `${profile.axis} · ${profile.baselinePole || "X"} → ${profile.pressurePole || "X"}` : "所有軸";
+    const metrics = profile.axis ? `<div class="dynamic-metrics"><span>低壓 ${fmt(profile.baseline)}</span><span>高壓 ${fmt(profile.pressure)}</span><span>Δ ${fmt(profile.delta)}</span></div>` : "";
+    return `<article class="dynamic-copy-card"><div class="copy-card-kicker">${axisLabelText}</div>${copy.title ? `<h3>${copyInlineHtml(copy.title)}</h3>` : ""}${copyMarkdownHtml(copy.body)}${metrics}</article>`;
+  }).join("")}</div>`;
+}
+
+function renderAxisCopy(result) {
+  return `<div class="axis-copy-grid">${Object.keys(axisMeta).map((axis) => {
+    const stateName = result.axisStates?.[axis] || axisState(result, axis);
+    const meta = axisMeta[axis];
+    const variables = { ...resultCopyVariables(result) };
+    variables[`${meta.positive}_Context`] = contextForPole(result, axis, meta.positive);
+    variables[`${meta.negative}_Context`] = contextForPole(result, axis, meta.negative);
+    const copy = copyEntry(`axis_${axis}_${stateName}`, variables);
+    return `<article class="axis-copy-card"><div class="copy-card-kicker">${axis} · ${stateName.replace(/_/g, " ")}</div>${copy.title ? `<h3>${copyInlineHtml(copy.title)}</h3>` : ""}${copyMarkdownHtml(copy.body)}</article>`;
+  }).join("")}</div>`;
+}
+
+function renderFunctionCopies(result) {
+  const scores = result.cognitiveFunctions || {};
+  const rankings = ["Ne", "Ni", "Se", "Si", "Te", "Ti", "Fe", "Fi"].sort((a, b) => (scores[b] || 0) - (scores[a] || 0));
+  return `<div class="function-copy-grid">${rankings.map((functionName, index) => {
+    const copy = copyEntry(`function_top_${functionName}`);
+    return `<article class="function-copy-card ${index < 2 ? "is-top" : ""}"><div class="copy-card-kicker">${functionName} · ${index < 2 ? "TOP SIGNAL" : "INDICATOR"}</div><div class="function-score">${scores[functionName] || 0}</div>${copy.title ? `<h3>${copyInlineHtml(copy.title)}</h3>` : ""}${copyMarkdownHtml(copy.body)}</article>`;
+  }).join("")}</div>`;
+}
+
+function renderDistinctiveCopies(result) {
+  const ranked = facetMeta.map((facet) => ({ ...facet, score: result.facetScores[facet.code] })).sort((a, b) => b.score - a.score);
+  const groups = [{ label: "Top 3", items: ranked.slice(0, 3), mode: "top", name: "特質名稱" }, { label: "Lowest 3", items: ranked.slice(-3).reverse(), mode: "low", name: "盲區名稱" }];
+  return `<div class="distinctive-copy-grid">${groups.map((group) => `<div class="distinctive-group"><div class="copy-card-kicker">${group.label}</div>${group.items.map((facet) => {
+    const copy = copyEntry(`distinct_${facet.code}_${group.mode}`);
+    const name = copy.fields?.[group.name] || copy.title || facet.zh;
+    const fields = Object.entries(copy.fields || {}).filter(([key]) => key !== group.name).map(([key, value]) => `<div class="distinctive-field"><strong>${escapeHtml(key)}</strong>${copyMarkdownHtml(value)}</div>`).join("");
+    return `<article class="distinctive-copy-card"><div class="distinctive-copy-head"><span>${facet.code}</span><b>${facet.score}/100</b></div><h3>${copyInlineHtml(name)}</h3>${fields}</article>`;
+  }).join("")}</div>`).join("")}</div>`;
+}
+
 function renderResults() {
   const result = state.result || scoreAll(state.itemOrder, state.responses);
-  const topFacets = facetMeta.map((facet) => ({ ...facet, score: result.facetScores[facet.code] })).sort((a, b) => b.score - a.score).slice(0, 3);
-  const bestLabel = result.bestFit;
-  const confidenceCopy = result.confidence === "High" ? "三種主要證據方向大致一致，且沒有顯著的邊界軸。" : result.confidence === "Medium" ? "部分證據來源或軸向仍接近邊界；請把情境差異一起讀。" : "多條軸出現邊界或證據分歧，這份結果更適合作為探索起點。";
+  const variables = resultCopyVariables(result);
+  const bestCopy = copyEntry("p1_best_fit_default", variables);
+  const precisionCopy = copyEntry(`p1_precision_x${(result.boundaryAxes || []).length}`, variables);
+  const confidenceCopy = copyEntry(`confidence_${String(result.confidence || "medium").toLowerCase()}`, variables);
+  const architectureIntro = copyEntry("p2_intro", variables);
+  const functionIntro = copyEntry("p4_intro", variables);
+  const secondaryCopy = copyEntry("function_secondary_intro", variables);
+  const secondaryGap = result.functionRankings?.length > 1 ? result.functionRankings[0].score - result.functionRankings[1].score : Infinity;
   app.innerHTML = `<section class="view result-view">
     <div class="result-hero">
-      <div><div class="result-kicker">Your measurement profile · ${escapeHtml(result.scoringVersion)}</div><h1 class="result-title">${escapeHtml(bestLabel)}</h1><p class="result-subtitle">Best-fit MBTI 是 <b>${escapeHtml(bestLabel)}</b>。更精確的 profile 是 <b>${escapeHtml(result.precisionType)}</b>；X 表示該軸在目前證據下沒有明顯單側偏好。</p><div class="result-actions"><button class="btn-primary" id="restartResult">重新測量</button><button class="btn-secondary" id="printResult">列印報告</button></div></div>
-      <div class="confidence-box"><div><div class="confidence-label">Measurement confidence</div><div class="confidence-value">${escapeHtml(result.confidence)}</div></div><p>${escapeHtml(confidenceCopy)}<br />這不是準確率，也不代表人格優劣。</p></div>
+      <div><div class="result-kicker">Your measurement profile · ${escapeHtml(result.scoringVersion)} · ${escapeHtml(RESULT_COPY_VERSION)}</div><h1 class="result-title">${escapeHtml(result.bestFit)}</h1><div class="result-copy-lead"><h2>${copyInlineHtml(bestCopy.title)}</h2>${copyMarkdownHtml(bestCopy.body, variables)}</div><div class="result-actions"><button class="btn-primary" id="restartResult">重新測量</button><button class="btn-secondary" id="printResult">列印報告</button></div></div>
+      <div class="confidence-box"><div><div class="confidence-label">${copyInlineHtml(confidenceCopy.title || "Measurement confidence")}</div><div class="confidence-value">${escapeHtml(result.confidence)} <small>${result.confidenceScore}/100</small></div></div>${copyMarkdownHtml(confidenceCopy.body, variables)}</div>
     </div>
-    <section class="result-section"><div class="section-heading"><h2>Architecture layer · 8 poles</h2><p>八個分數彼此獨立，不假設對立兩端相加等於 100。</p></div><div class="poles-grid">${renderPoleCards(result)}</div></section>
+    <section class="result-section"><div class="section-heading"><h2>Type + Precision</h2><p>Page 1 · 固定結果文案</p></div>${renderCopyPanel(precisionCopy, "precision-copy")}</section>
+    <section class="result-section"><div class="section-heading"><h2>Architecture layer · 8 poles</h2><p>Page 2 · ${copyInlineHtml(architectureIntro.title)}</p></div>${renderCopyPanel(architectureIntro, "architecture-copy")}<div class="poles-grid">${renderPoleCards(result)}</div></section>
     <section class="result-section"><div class="section-heading"><h2>Cognitive cost layer · 8 channels</h2><p>成本分數獨立呈現：越高代表越容易在該通道感到耗能，不會扣除你的能力或偏好分數。</p></div><div class="poles-grid cost-grid">${renderCostCards(result)}</div></section>
-    <section class="result-section"><div class="section-heading"><h2>Facet layer · 24 mechanisms</h2><p>展開每一條軸，查看形成 pole strength 的底層機制。</p></div>${renderFacetGroups(result)}</section>
+    <section class="result-section"><div class="section-heading"><h2>Facet layer · 24 mechanisms</h2><p>Page 3 · 每個 Facet 依 L1–L4 查表顯示完整解讀。</p></div>${renderFacetGroups(result)}</section>
     <section class="result-section"><div class="section-heading"><h2>Axis architecture</h2><p>Relative preference、integration、polarization 與 activity 同時保留。</p></div><div class="architecture-grid">${renderArchitecture(result)}</div></section>
     <section class="result-section"><div class="section-heading"><h2>Context map</h2><p>同一條軸在不同約束下可能採取不同表現。</p></div><div class="context-wrap"><table class="context-table"><thead><tr><th>Environment</th><th>EI</th><th>SN</th><th>TF</th><th>JP</th></tr></thead><tbody>${["free", "responsibility", "pressure", "uncertainty"].map((context) => `<tr><td>${contextZh(context)}</td>${Object.keys(axisMeta).map((axis) => { const value = result.scenarioContext[axis][context]; return `<td><span class="context-badge ${contextClass(value)}">${contextLabel(value, axis)}</span></td>`; }).join("")}</tr>`).join("")}</tbody></table></div><p class="intro-note" style="margin-top:11px">Context sensitivity：${Object.entries(result.contextSensitivity).map(([axis, value]) => `${axis} ${value}`).join(" · ")}（數值越高，情境差異越明顯）</p></section>
-    <section class="result-section"><div class="section-heading"><h2>Most distinctive patterns</h2><p>由你的 facet 分數生成，不套用 generic type stereotype。</p></div><div class="distinctive"><div class="trait-list">${topFacets.map((facet, index) => `<div class="trait-item"><span class="trait-index">0${index + 1}</span><div><strong>${escapeHtml(facet.zh)}</strong><p>${escapeHtml(facet.desc)} 目前分數為 ${facet.score}/100，這個模式在你的回覆中出現得相對突出。</p></div></div>`).join("")}</div><div class="method-note"><h3>How to read this report</h3><p>先看八個 pole 的高低，再看每組軸的 profile。Dual High 代表兩種模式都很強；Balanced 只是接近，不代表低活躍。你的回覆顯示的是目前測量到的模式，不是固定身份。</p><p><code>Behavior 40% · Forced choice 30% · Scenario 30%</code></p></div></div></section>
+    <section class="result-section"><div class="section-heading"><h2>Cognitive Function Indicators</h2><p>Page 4 · ${copyInlineHtml(functionIntro.title || "")}</p></div>${renderCopyPanel(functionIntro, "function-intro-copy")}${secondaryGap <= 1 ? renderCopyPanel(secondaryCopy, "secondary-copy") : ""}${renderFunctionCopies(result)}</section>
+    <section class="result-section"><div class="section-heading"><h2>Dynamic Profile</h2><p>Page 5 · 低壓與高壓模式的 deterministic comparison。</p></div>${renderDynamicCopy(result)}</section>
+    <section class="result-section"><div class="section-heading"><h2>Dual Channel Analysis</h2><p>Page 6 · 每條軸依 24 個 state template 查表。</p></div>${renderAxisCopy(result)}</section>
+    <section class="result-section"><div class="section-heading"><h2>Distinctive Profile</h2><p>Page 7 · Top 3 與 Lowest 3 Facets 的完整結果文案。</p></div>${renderDistinctiveCopies(result)}</section>
     <section class="result-section"><div class="section-heading"><h2>Response quality</h2><p>只影響 Measurement Confidence，不直接改寫人格分數。</p></div><div class="architecture-grid"><div class="architecture-card"><h3>Consistency</h3><div class="arch-score"><b>${result.quality.consistency}</b> / 100</div><p class="arch-summary">相同機制的不同表述是否大致一致。</p></div><div class="architecture-card"><h3>Attention</h3><div class="arch-score"><b>${result.quality.attention}</b> / 100</div><p class="arch-summary">是否出現大量完全相同的選項。</p></div><div class="architecture-card"><h3>Response time</h3><div class="arch-score"><b>${(result.quality.averageResponse / 1000).toFixed(1)}s</b></div><p class="arch-summary">${result.quality.speedAnomaly ? "速度偏快，僅降低結果信心。" : "沒有極端快速作答訊號。"}</p></div><div class="architecture-card"><h3>Scoring record</h3><div class="arch-score"><b>${result.scoringVersion}</b></div><p class="arch-summary">每一題回答與時間戳都保留，可在未來重新計算。</p></div></div></section>
   </section>`;
   document.getElementById("restartResult").addEventListener("click", resetState);
@@ -864,7 +1085,7 @@ function renderFacetGroups(result) {
   return Object.keys(axisMeta).map((axis) => {
     const meta = axisMeta[axis];
     const facets = facetMeta.filter((facet) => facet.axis === axis);
-    return `<details class="facet-axis" ${axis === "SN" ? "open" : ""}><summary><span class="facet-axis-code">${axis}</span><span class="facet-axis-title">${escapeHtml(meta.title)}</span><span class="facet-axis-total">${result.poleScores[meta.positive]} / ${result.poleScores[meta.negative]}</span></summary><div class="facet-list">${facets.map((facet) => `<div class="facet-row"><span>${escapeHtml(facet.zh)}<br /><small style="color:#899287">${escapeHtml(facet.name)}</small></span><strong>${result.facetScores[facet.code]}</strong><div class="facet-bar"><i style="width:${result.facetScores[facet.code]}%"></i></div></div>`).join("")}</div></details>`;
+    return `<details class="facet-axis" ${axis === "SN" ? "open" : ""}><summary><span class="facet-axis-code">${axis}</span><span class="facet-axis-title">${escapeHtml(meta.title)}</span><span class="facet-axis-total">${result.poleScores[meta.positive]} / ${result.poleScores[meta.negative]}</span></summary><div class="facet-list">${facets.map((facet) => { const score = result.facetScores[facet.code]; const level = facetLevel(score); const copy = copyEntry(`facet_${facet.code}_${level}`); return `<details class="facet-row"><summary><span>${escapeHtml(facet.zh)}<br /><small style="color:#899287">${escapeHtml(facet.name)} · ${level}</small></span><strong>${score}</strong><div class="facet-bar"><i style="width:${score}%"></i></div></summary><div class="facet-copy-body">${copyMarkdownHtml(copy.body)}</div></details>`; }).join("")}</div></details>`;
   }).join("");
 }
 
@@ -900,3 +1121,4 @@ document.addEventListener("keydown", (event) => {
 restore();
 render();
 hydrateQuestionBank();
+hydrateResultCopy();

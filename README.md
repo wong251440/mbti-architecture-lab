@@ -1,6 +1,6 @@
 # MBTI Architecture Lab
 
-依照 `設計.txt` 與 `題庫2.txt` 建立的單頁測量原型。題目文字、選項與後端標記由 `題庫2.txt` 在載入時解析，整個測驗不把對立 pole 當成互補百分比，而是保留 24 facets、8 poles、4 組相對偏好、情境差異與認知成本。
+依照 `設計.txt`、`題庫2.txt` 與 `結果文字.txt` 建立的單頁測量原型。題目文字、選項與後端標記由 `題庫2.txt` 在載入時解析；結果文案由 `結果文字.txt` 的固定 `text_id` 查表並以 deterministic variables 插值，不使用 LLM。整個測驗不把對立 pole 當成互補百分比，而是保留 24 facets、8 poles、4 組相對偏好、情境差異與認知成本。
 
 ## 啟動
 
@@ -21,5 +21,6 @@ python3 -m http.server 4173
 - Boundary／channel disagreement 時，最多追加 8 題 Dynamic Probe
 - `SCORING_VERSION` 目前為 `1.1`、`QUESTION_BANK_VERSION` 為 `DCA-v2.1`；每份 response 會保存 `user_id`、`item_id`、`answer`、`responseTime`、`timestamp` 與 scoring version
 - 結果頁提供 8 poles、8 cognitive cost channels、24 facets、integration、polarization、activity、context map、response quality 與 measurement confidence
+- `RESULT_COPY_VERSION` 為 `DCA-Report-v1.0-candidate-zhHant`，完整載入 205 個結果模板：Page 1–7、Facet 分級、Cognitive Function、Dynamic Profile、Dual Channel Analysis 與 Distinctive Profile
 
 這版以瀏覽器 `localStorage` 保存測量進度，未連接遠端資料庫或 AI 文字生成服務；後續可直接把 `state.responses` 與 `scoreAll` 接到 API。
