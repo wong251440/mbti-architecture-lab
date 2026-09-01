@@ -5,6 +5,16 @@ const QUESTION_BANK_FILE = "題庫2.txt";
 const RESULT_COPY_FILE = "結果文字.txt";
 const RESULT_COPY_VERSION = "DCA-Report-v1.0-candidate-zhHant";
 const STORAGE_KEY = "mbti-architecture-lab-v1";
+const LOCAL_SAVE_VERSION = 2;
+
+const JUNG_FUNCTION_ORDER = ["Ne", "Ni", "Se", "Si", "Te", "Ti", "Fe", "Fi"];
+const JUNG_FUNCTION_LABELS = { Ne: "外向直覺", Ni: "內向直覺", Se: "外向感覺", Si: "內向感覺", Te: "外向思考", Ti: "內向思考", Fe: "外向情感", Fi: "內向情感" };
+const JUNG_FUNCTION_STACKS = {
+  INTJ: ["Ni", "Te", "Fi", "Se"], INTP: ["Ti", "Ne", "Si", "Fe"], ENTJ: ["Te", "Ni", "Se", "Fi"], ENTP: ["Ne", "Ti", "Fe", "Si"],
+  INFJ: ["Ni", "Fe", "Ti", "Se"], INFP: ["Fi", "Ne", "Si", "Te"], ENFJ: ["Fe", "Ni", "Se", "Ti"], ENFP: ["Ne", "Fi", "Te", "Si"],
+  ISTJ: ["Si", "Te", "Fi", "Ne"], ISFJ: ["Si", "Fe", "Ti", "Ne"], ESTJ: ["Te", "Si", "Ne", "Fi"], ESFJ: ["Fe", "Si", "Ne", "Ti"],
+  ISTP: ["Ti", "Se", "Ni", "Fe"], ISFP: ["Fi", "Se", "Ni", "Te"], ESTP: ["Se", "Ti", "Fe", "Ni"], ESFP: ["Se", "Fi", "Te", "Ni"]
+};
 
 const axisMeta = {
   EI: { positive: "I", negative: "E", title: "Internal / External Orientation", labels: ["內部導向", "外部導向"] },
@@ -449,7 +459,7 @@ async function hydrateQuestionBank() {
     const parsedById = new Map(parsed.allItems.map((item) => [item.item_id, item]));
     const savedIds = state.itemOrder.map((item) => item.item_id);
     const canRemapSavedOrder = savedIds.length >= 80 && savedIds.every((itemId) => parsedById.has(itemId));
-    if (canRemapSavedOrder && state.questionBankVersion === QUESTION_BANK_VERSION) {
+    if (canRemapSavedOrder) {
       state.itemOrder = savedIds.map((itemId) => parsedById.get(itemId));
       if (state.result) state.result = scoreAll(state.itemOrder, state.responses);
     } else {
@@ -461,6 +471,8 @@ async function hydrateQuestionBank() {
       state.view = "intro";
       state.probeMode = false;
       state.resultPage = 1;
+      state.demoMode = false;
+      state.savedAt = null;
     }
     state.questionBankVersion = QUESTION_BANK_VERSION;
     questionBankReady = true;
@@ -512,7 +524,10 @@ const state = {
   initialScoring: null,
   result: null,
   probeMode: false,
-  resultPage: 1
+  resultPage: 1,
+  demoMode: false,
+  savedAt: null,
+  saveVersion: LOCAL_SAVE_VERSION
 };
 
 const app = document.getElementById("app");
@@ -537,7 +552,19 @@ const responseKey = (response) => {
 const isCompleteResponse = (item, response) => Boolean(response) && (item?.format !== "micro_sim" || (response.step1 && response.step2));
 
 function persist() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, view: state.view === "result" ? "result" : state.view }));
+  if (state.demoMode) {
+    updateSavedState();
+    return;
+  }
+  const savedAt = new Date().toISOString();
+  const payload = { ...state, savedAt, saveVersion: LOCAL_SAVE_VERSION, view: state.view === "result" ? "result" : state.view };
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    state.savedAt = savedAt;
+    state.saveVersion = LOCAL_SAVE_VERSION;
+  } catch (_) {
+    savedStateEl.textContent = "無法保存於本機";
+  }
   updateSavedState();
 }
 
@@ -545,8 +572,9 @@ function restore() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (!saved || !saved.itemOrder?.length) return;
-    if (saved.questionBankVersion !== QUESTION_BANK_VERSION) return;
-    Object.assign(state, saved);
+    Object.assign(state, saved, { demoMode: false, saveVersion: saved.saveVersion || LOCAL_SAVE_VERSION });
+    state.responses = saved.responses && typeof saved.responses === "object" ? saved.responses : {};
+    state.savedAt = saved.savedAt || null;
     if (state.view === "quiz" && state.currentIndex >= state.itemOrder.length) state.currentIndex = state.itemOrder.length - 1;
     state.resultPage = clamp(Number(state.resultPage) || 1, 1, 7);
   } catch (_) { /* ignore malformed local data */ }
@@ -554,7 +582,8 @@ function restore() {
 
 function updateSavedState() {
   const count = state.itemOrder.filter((item) => isCompleteResponse(item, state.responses[item.item_id])).length;
-  savedStateEl.textContent = count ? `${count} 題已保存` : "尚未開始";
+  if (state.demoMode) savedStateEl.textContent = "示範資料 · 未覆蓋本機";
+  else savedStateEl.textContent = count ? `${count} 題已保存 · 本機` : "尚未開始";
 }
 
 function resetState() {
@@ -569,7 +598,10 @@ function resetState() {
   state.result = null;
   state.probeMode = false;
   state.resultPage = 1;
-  localStorage.removeItem(STORAGE_KEY);
+  state.demoMode = false;
+  state.savedAt = null;
+  state.saveVersion = LOCAL_SAVE_VERSION;
+  try { localStorage.removeItem(STORAGE_KEY); } catch (_) { /* ignore unavailable storage */ }
   render();
 }
 
@@ -585,6 +617,7 @@ function startTest(resume = false) {
     state.result = null;
     state.probeMode = false;
     state.resultPage = 1;
+    state.demoMode = false;
   }
   state.view = "quiz";
   state.questionStartedAt = Date.now();
@@ -594,6 +627,7 @@ function startTest(resume = false) {
 
 function fillDemo() {
   if (!questionBankReady) return;
+  state.demoMode = true;
   state.itemOrder = buildInitialOrder();
   state.startedAt = Date.now() - 1000 * 60 * 18;
   state.responses = {};
@@ -620,7 +654,7 @@ function fillDemo() {
   state.view = "result";
   state.resultPage = 1;
   state.probeMode = false;
-  persist();
+  updateSavedState();
   render();
 }
 
@@ -805,10 +839,11 @@ function scoreAll(items, responses) {
   const bestFit = Object.keys(axisMeta).map((axis) => axes[axis] > 0 ? axisMeta[axis].positive : axisMeta[axis].negative).join("");
   const cognitiveFunctions = cognitiveFunctionScores(items, responses);
   const functionRankings = Object.entries(cognitiveFunctions).sort((a, b) => b[1] - a[1]).map(([functionName, score]) => ({ functionName, score }));
+  const jungMbti = deriveJungMbti(cognitiveFunctions);
   const dynamicProfiles = buildDynamicProfiles(channels, scenarioContext);
   const axisStates = Object.fromEntries(Object.keys(axisMeta).map((axis) => [axis, axisState({ poleScores, contextSensitivity }, axis)]));
   const boundaryAxes = Object.keys(axisMeta).filter((axis) => Math.abs(axes[axis]) <= 0.15);
-  return { facetScores, poleScores, costScores, costRecovery, channels, axes, profiles, architecture, scenarioContext, contextSensitivity, dynamicAxes, dynamicProfiles, axisStates, boundaryAxes, quality, confidence, confidenceScore, precisionType, bestFit, scoringVersion: SCORING_VERSION, resultCopyVersion: RESULT_COPY_VERSION, cognitiveFunctions, functionRankings, cognitiveFacets: cognitiveFacetScores(items, responses) };
+  return { facetScores, poleScores, costScores, costRecovery, channels, axes, profiles, architecture, scenarioContext, contextSensitivity, dynamicAxes, dynamicProfiles, axisStates, boundaryAxes, quality, confidence, confidenceScore, precisionType, bestFit, scoringVersion: SCORING_VERSION, resultCopyVersion: RESULT_COPY_VERSION, cognitiveFunctions, functionRankings, jungMbti, cognitiveFacets: cognitiveFacetScores(items, responses) };
 }
 
 function microScenarioScore(item, response) {
@@ -836,6 +871,26 @@ function cognitiveFunctionScores(items, responses) {
     if (second?.function_tag) points[second.function_tag] = (points[second.function_tag] || 0) + 1;
   });
   return points;
+}
+
+function deriveJungMbti(functionScores = {}) {
+  const raw = Object.fromEntries(JUNG_FUNCTION_ORDER.map((name) => [name, Math.max(0, Number(functionScores[name]) || 0)]));
+  const max = Math.max(...Object.values(raw), 0);
+  if (!max) return { type: null, fit: 0, stack: [], scores: raw };
+  const observedNorm = Math.sqrt(JUNG_FUNCTION_ORDER.reduce((sum, name) => sum + (raw[name] ** 2), 0)) || 1;
+  const normalized = Object.fromEntries(JUNG_FUNCTION_ORDER.map((name) => [name, raw[name] / observedNorm]));
+  const positionTargets = [1, 0.78, 0.58, 0.4, 0.3, 0.22, 0.16, 0.1];
+  const opposite = { Ne: "Ni", Ni: "Ne", Se: "Si", Si: "Se", Te: "Ti", Ti: "Te", Fe: "Fi", Fi: "Fe" };
+  const candidates = Object.entries(JUNG_FUNCTION_STACKS).map(([type, stack]) => {
+    const fullStack = [...stack, ...stack.map((name) => opposite[name])];
+    const expectedNorm = Math.sqrt(positionTargets.reduce((sum, value) => sum + (value ** 2), 0));
+    const expected = Object.fromEntries(fullStack.map((name, index) => [name, positionTargets[index] / expectedNorm]));
+    const similarity = JUNG_FUNCTION_ORDER.reduce((sum, name) => sum + normalized[name] * (expected[name] || 0), 0);
+    const fit = Math.round(clamp(similarity * 100, 0, 100));
+    return { type, stack, fullStack, fit, similarity };
+  }).sort((a, b) => b.fit - a.fit || b.similarity - a.similarity || a.type.localeCompare(b.type));
+  const best = candidates[0];
+  return { type: best.type, fit: best.fit, stack: best.stack, fullStack: best.fullStack, scores: raw, candidates };
 }
 
 function cognitiveFacetScores(items, responses) {
@@ -893,8 +948,11 @@ function renderOptionButtons(options, selected, step = null) {
 }
 
 function renderIntro() {
-  const hasProgress = !state.result && state.itemOrder.length && Object.keys(state.responses).length && state.view !== "result";
-  const readyLabel = questionBankReady ? (hasProgress ? "繼續測驗" : "開始 80 題測量") : "載入題庫中...";
+  const hasResponses = state.itemOrder.length && Object.keys(state.responses).length;
+  const hasProgress = hasResponses && !state.result && state.view !== "result";
+  const hasSavedResult = hasResponses && Boolean(state.result);
+  const readyLabel = questionBankReady ? (hasSavedResult ? "查看已保存結果" : hasProgress ? "繼續測驗" : "開始 80 題測量") : "載入題庫中...";
+  const saveNote = state.savedAt ? `最後保存：${new Date(state.savedAt).toLocaleString("zh-Hant", { dateStyle: "short", timeStyle: "short" })}` : "回答會自動保存於此裝置";
   app.innerHTML = `<section class="view intro-view">
     <div class="intro-grid">
       <div>
@@ -903,10 +961,10 @@ function renderIntro() {
         <p class="intro-lede">這不是把你塞進四個二分字母的快問快答。系統先從 24 個人格機制觀察你的實際行為，再比較取捨與情境，最後才給出一個可保留不確定性的結果。</p>
         <div class="intro-actions">
           <button class="btn-primary" id="startButton" ${questionBankReady ? "" : "disabled"}>${readyLabel} <span aria-hidden="true">→</span></button>
-          ${hasProgress ? `<button class="btn-secondary" id="restartButton">重新開始</button>` : ""}
+          ${hasResponses ? `<button class="btn-secondary" id="restartButton">重新測驗</button>` : ""}
           <button class="btn-quiet" id="demoButton">查看示範報告</button>
         </div>
-        <p class="intro-note" style="margin-top:14px">約 12–18 分鐘 · 可隨時返回 · 回覆會自動保存於此裝置</p>
+        <p class="intro-note" style="margin-top:14px">約 12–18 分鐘 · 可隨時返回 · ${saveNote}</p>
       </div>
       <div class="intro-metric-panel">
         <div class="metric-panel-head"><strong>Measurement layers</strong><span>從行為到類型</span></div>
@@ -925,7 +983,7 @@ function renderIntro() {
       <div class="intro-stat"><b>v1.1</b><span>可重新計算的 scoring</span></div>
     </div>
   </section>`;
-  document.getElementById("startButton").addEventListener("click", () => startTest(Boolean(hasProgress)));
+  document.getElementById("startButton").addEventListener("click", () => { if (hasSavedResult) { state.view = "result"; persist(); render(); } else startTest(Boolean(hasProgress)); });
   document.getElementById("demoButton").addEventListener("click", fillDemo);
   document.getElementById("restartButton")?.addEventListener("click", resetState);
 }
@@ -1076,6 +1134,13 @@ function renderFunctionSummary(result) {
   return `<div class="answer-strip function-answer-strip"><div><span>最強訊號</span><strong>${rankings[0]} · ${scores[rankings[0]] || 0}</strong><small>最常被你放在第一順位</small></div><div><span>第二訊號</span><strong>${rankings[1]} · ${scores[rankings[1]] || 0}</strong><small>與第一訊號的距離 ${Math.max(0, (scores[rankings[0]] || 0) - (scores[rankings[1]] || 0))}</small></div><p>這是本次回答中看見的傾向，不等於傳統理論裡預設的功能堆疊。</p></div>`;
 }
 
+function renderJungConversion(result) {
+  const conversion = result.jungMbti || deriveJungMbti(result.cognitiveFunctions || {});
+  if (!conversion.type) return `<section class="jung-conversion jung-conversion-empty"><div><span class="copy-card-kicker">Jung 八維 → MBTI</span><h3>資料不足，暫時無法推導</h3><p>完成情境題後，系統才會以八個認知功能訊號比對 16 組標準 MBTI 功能堆疊。</p></div></section>`;
+  const stack = conversion.stack.map((name, index) => `<li><span>${index + 1}</span><strong>${name}</strong><b>${escapeHtml(JUNG_FUNCTION_LABELS[name])}</b><small>${["主導", "輔助", "第三", "劣勢"][index]}</small></li>`).join("");
+  return `<section class="jung-conversion"><div class="jung-conversion-head"><div><span class="copy-card-kicker">Jung 八維 → MBTI</span><h3>八維最接近的 MBTI：${conversion.type}</h3><p>以本次測得的八個功能分數，和 16 種標準 MBTI 八功能堆疊做加權相似度比對。</p></div><div class="jung-fit"><strong>${conversion.fit}</strong><span>/ 100 fit</span></div></div><ol class="jung-stack">${stack}</ol><p class="jung-conversion-note">這個 ${conversion.type} 只代表「八維訊號最接近的轉換結果」，不會改寫 Page 1 的 Best-fit 類型。</p></section>`;
+}
+
 function renderDynamicSummary(result) {
   const shifts = (result.dynamicProfiles || []).filter((profile) => profile.meaningfulShift).sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
   const lead = shifts[0];
@@ -1114,7 +1179,7 @@ function resultPageContent(page, result, variables) {
   if (page === 1) return `<div class="result-hero page1-hero"><div><div class="result-kicker">Your measurement profile · ${escapeHtml(result.scoringVersion)} · ${escapeHtml(RESULT_COPY_VERSION)}</div><h2 class="result-title">${escapeHtml(result.bestFit)}</h2><div class="result-copy-lead"><h3>${copyInlineHtml(bestCopy.title)}</h3>${copyMarkdownHtml(bestCopy.body, variables)}</div><div class="result-actions"><button class="btn-primary" id="restartResult">重新測量</button><button class="btn-secondary" id="printResult">列印報告</button></div></div><div class="confidence-box"><div><div class="confidence-label">${copyInlineHtml(confidenceCopy.title || "Measurement confidence")}</div><div class="confidence-value">${escapeHtml(result.confidence)} <small>${result.confidenceScore}/100</small></div></div>${copyMarkdownHtml(confidenceCopy.body, variables)}</div></div><section class="result-section"><div class="section-heading"><h2>Precision</h2><p>結果邊界與穩定程度</p></div>${renderCopyPanel(precisionCopy, "precision-copy")}</section><section class="result-section"><div class="section-heading"><h2>Measurement quality</h2><p>只影響信心，不直接改寫人格分數</p></div>${renderQuality(result)}</section>`;
   if (page === 2) return `<section class="result-section page2-architecture"><div class="section-heading"><h2>先看誰是主力</h2><p>8 個 pole 的相對強度</p></div>${renderPoleSummary(result)}${renderCopyPanel(architectureIntro, "architecture-copy")}<div class="poles-grid">${renderPoleCards(result)}</div>${renderCostDetails(result)}</section>`;
   if (page === 3) return `<section class="result-section page3-facets"><div class="section-heading"><h2>先看最高與最低</h2><p>24 個 Facet 依 L1–L4 展開</p></div>${renderFacetSummary(result)}<div class="facet-intro">分數是位置，文案是語境。展開一條軸，再逐一查看六個機制，才看得見總分背後的差異。</div>${renderFacetGroups(result)}</section>`;
-  if (page === 4) return `<section class="result-section page4-functions"><div class="section-heading"><h2>先看最常用的訊號</h2><p>8 個功能指標由高到低排列</p></div>${renderFunctionSummary(result)}${renderCopyPanel(functionIntro, "function-intro-copy")}${secondaryGap <= 1 ? renderCopyPanel(secondaryCopy, "secondary-copy") : ""}${renderFunctionCopies(result)}</section>`;
+  if (page === 4) return `<section class="result-section page4-functions"><div class="section-heading"><h2>先看最常用的訊號</h2><p>8 個功能指標由高到低排列</p></div>${renderFunctionSummary(result)}${renderJungConversion(result)}${renderCopyPanel(functionIntro, "function-intro-copy")}${secondaryGap <= 1 ? renderCopyPanel(secondaryCopy, "secondary-copy") : ""}${renderFunctionCopies(result)}</section>`;
   if (page === 5) return `<section class="result-section page5-dynamic"><div class="section-heading"><h2>先找會轉檔的軸</h2><p>低壓與高壓的 deterministic comparison</p></div>${renderDynamicSummary(result)}${renderDynamicCopy(result)}<div class="result-subsection context-subsection"><div class="section-heading"><h2>再看哪種情境觸發</h2><p>同一條軸在不同約束下的實際表現</p></div>${renderContextMap(result)}</div></section>`;
   if (page === 6) return `<section class="result-section page6-dual"><div class="section-heading"><h2>先讀懂兩個通道</h2><p>偏好與情境並排比較</p></div>${renderChannelLegend()}<div class="result-subsection"><div class="section-heading"><h2>四條軸的結構摘要</h2><p>Relative preference、integration、polarization 與 activity</p></div><div class="architecture-grid">${renderArchitecture(result)}</div></div><div class="result-subsection"><div class="section-heading"><h2>逐軸解讀</h2><p>依 state template 顯示完整文案</p></div>${renderAxisCopy(result)}</div></section>`;
   return `<section class="result-section page7-distinctive"><div class="section-heading"><h2>先看六個分數</h2><p>Top 3 與 Lowest 3 Facets</p></div>${renderDistinctiveSummary(result)}${renderDistinctiveCopies(result)}<div class="report-closure"><strong>讀法建議</strong><p>先從三個高點找到可依賴的自然反應，再用三個低點辨認需要補充能量的場景。高點不是優越，低點也不是缺陷；它們只是你下一步最值得觀察的地方。</p></div></section>`;
@@ -1178,7 +1243,32 @@ function render() {
   else renderIntro();
 }
 
-document.getElementById("brandButton").addEventListener("click", () => { state.view = "intro"; persist(); render(); });
+function leaveDemoMode() {
+  if (!state.demoMode) return Boolean(state.itemOrder.length);
+  let hasSavedRecord = false;
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+    hasSavedRecord = Boolean(saved?.itemOrder?.length);
+  } catch (_) { /* ignore unavailable storage */ }
+  if (hasSavedRecord) {
+    restore();
+  }
+  if (!hasSavedRecord || !state.itemOrder.length) {
+    state.view = "intro";
+    state.itemOrder = [];
+    state.currentIndex = 0;
+    state.responses = {};
+    state.startedAt = null;
+    state.questionStartedAt = null;
+    state.initialScoring = null;
+    state.result = null;
+    state.resultPage = 1;
+  }
+  state.demoMode = false;
+  return Boolean(state.itemOrder.length);
+}
+
+document.getElementById("brandButton").addEventListener("click", () => { const hasRecord = leaveDemoMode(); state.view = "intro"; if (hasRecord) persist(); else updateSavedState(); render(); });
 document.addEventListener("keydown", (event) => {
   if (state.view !== "quiz") return;
   if (/^[1-5]$/.test(event.key)) {
@@ -1202,3 +1292,6 @@ restore();
 render();
 hydrateQuestionBank();
 hydrateResultCopy();
+
+window.addEventListener("beforeunload", () => { if (state.itemOrder.length && !state.demoMode) persist(); });
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden" && state.itemOrder.length && !state.demoMode) persist(); });
