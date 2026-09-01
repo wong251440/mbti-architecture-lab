@@ -1020,7 +1020,7 @@ function renderAxisCopy(result) {
     variables[`${meta.positive}_Context`] = contextForPole(result, axis, meta.positive);
     variables[`${meta.negative}_Context`] = contextForPole(result, axis, meta.negative);
     const copy = copyEntry(`axis_${axis}_${stateName}`, variables);
-    return `<article class="axis-copy-card"><div class="copy-card-kicker">${axis} · ${stateName.replace(/_/g, " ")}</div>${copy.title ? `<h3>${copyInlineHtml(copy.title)}</h3>` : ""}${copyMarkdownHtml(copy.body)}</article>`;
+    return `<details class="axis-copy-card" ${stateName === "context_sensitive" ? "open" : ""}><summary><div class="copy-card-kicker">${axis} · ${axisStateLabel(stateName)}</div>${copy.title ? `<h3>${copyInlineHtml(copy.title)}</h3>` : ""}<span class="copy-card-toggle">＋</span></summary><div class="axis-copy-body">${copyMarkdownHtml(copy.body)}</div></details>`;
   }).join("")}</div>`;
 }
 
@@ -1029,30 +1029,71 @@ function renderFunctionCopies(result) {
   const rankings = ["Ne", "Ni", "Se", "Si", "Te", "Ti", "Fe", "Fi"].sort((a, b) => (scores[b] || 0) - (scores[a] || 0));
   return `<div class="function-copy-grid">${rankings.map((functionName, index) => {
     const copy = copyEntry(`function_top_${functionName}`);
-    return `<article class="function-copy-card ${index < 2 ? "is-top" : ""}"><div class="copy-card-kicker">${functionName} · ${index < 2 ? "TOP SIGNAL" : "INDICATOR"}</div><div class="function-score">${scores[functionName] || 0}</div>${copy.title ? `<h3>${copyInlineHtml(copy.title)}</h3>` : ""}${copyMarkdownHtml(copy.body)}</article>`;
+    return `<details class="function-copy-card ${index < 2 ? "is-top" : ""}" ${index < 2 ? "open" : ""}><summary><div class="copy-card-kicker">${functionName} · ${index < 2 ? "TOP SIGNAL" : "INDICATOR"}</div><div class="function-score">${scores[functionName] || 0}</div>${copy.title ? `<h3>${copyInlineHtml(copy.title)}</h3>` : ""}<span class="copy-card-toggle">＋</span></summary><div class="function-copy-body">${copyMarkdownHtml(copy.body)}</div></details>`;
   }).join("")}</div>`;
 }
 
 function renderDistinctiveCopies(result) {
   const ranked = facetMeta.map((facet) => ({ ...facet, score: result.facetScores[facet.code] })).sort((a, b) => b.score - a.score);
   const groups = [{ label: "Top 3", items: ranked.slice(0, 3), mode: "top", name: "特質名稱" }, { label: "Lowest 3", items: ranked.slice(-3).reverse(), mode: "low", name: "盲區名稱" }];
-  return `<div class="distinctive-copy-grid">${groups.map((group) => `<div class="distinctive-group"><div class="copy-card-kicker">${group.label}</div>${group.items.map((facet) => {
+  return `<div class="distinctive-copy-grid">${groups.map((group) => `<div class="distinctive-group"><div class="copy-card-kicker">${group.label}</div>${group.items.map((facet, index) => {
     const copy = copyEntry(`distinct_${facet.code}_${group.mode}`);
     const name = copy.fields?.[group.name] || copy.title || facet.zh;
     const fields = Object.entries(copy.fields || {}).filter(([key]) => key !== group.name).map(([key, value]) => `<div class="distinctive-field"><strong>${escapeHtml(key)}</strong>${copyMarkdownHtml(value)}</div>`).join("");
-    return `<article class="distinctive-copy-card"><div class="distinctive-copy-head"><span>${facet.code}</span><b>${facet.score}/100</b></div><h3>${copyInlineHtml(name)}</h3>${fields}</article>`;
+    return `<details class="distinctive-copy-card" ${index === 0 ? "open" : ""}><summary class="distinctive-copy-summary"><div class="distinctive-copy-head"><span>${facet.code}</span><b>${facet.score}/100</b></div><h3>${copyInlineHtml(name)}</h3><span class="copy-card-toggle">＋</span></summary><div class="distinctive-copy-body">${fields}</div></details>`;
   }).join("")}</div>`).join("")}</div>`;
 }
 
 const resultPageMeta = [
-  { eyebrow: "Type + Precision + Confidence", title: "先找到入口，再保留複雜度", deck: "這一頁先回答最實用的問題：你的結果是什麼、邊界在哪裡，以及這次測量值得信任到什麼程度。" },
-  { eyebrow: "8 Pole Architecture", title: "你的八極架構", deck: "把四條軸拆成八個可觀察的極點，看看哪些能量自然流動，哪些地方需要刻意調度。" },
-  { eyebrow: "24 Facets", title: "輪廓藏在 24 個機制裡", deck: "總分只是摘要；Facet 讓你看見同一條軸內部，哪些反應模式真正拉開了差距。" },
-  { eyebrow: "8 Cognitive Function Indicators", title: "八個認知功能訊號", deck: "這不是固定的功能排序，而是一張訊號地圖：你如何接收資訊、組織判斷，再把它交給世界。" },
-  { eyebrow: "Dynamic Profile", title: "壓力不是另一個你", deck: "低壓、高壓與責任情境會改變表現方式；動態頁把這些變化放在同一條時間線上閱讀。" },
-  { eyebrow: "4 Axis Dual Channel Analysis", title: "四條軸，兩個通道", deck: "偏好分數與情境通道一起看，才能分辨穩定傾向、雙高雙低，以及真正的情境敏感。" },
-  { eyebrow: "Top 3 + Lowest 3 Distinctive Profile", title: "留下最鮮明的六個訊號", deck: "最後把報告收斂成三個高點與三個低點，作為你接下來觀察自己的起點。" }
+  { eyebrow: "Type + Precision + Confidence", nav: "類型與可信度", title: (result) => `你的結果：${result.bestFit}`, deck: "先看 Best-fit、精細類型與信心分數；讀完你會知道這份結果能不能直接使用。" },
+  { eyebrow: "8 Pole Architecture", nav: "八極架構", title: "八個獨立極點", deck: "這一頁只看八個可觀察的極點：哪些是主力，哪些較弱；成本細節放在最後。" },
+  { eyebrow: "24 Facets", nav: "24 個 Facets", title: "24 個行為機制", deck: "先看最高與最低的機制，再展開四條軸內的細節，不讓總分替你說完故事。" },
+  { eyebrow: "8 Cognitive Function Indicators", nav: "八個認知功能", title: "你最常用哪種處理方式？", deck: "這一頁回答你如何接收資訊、組織判斷與採取行動；分數是本次測量訊號，不是固定功能堆疊。" },
+  { eyebrow: "Dynamic Profile", nav: "動態檔案", title: "表現會在哪裡轉檔？", deck: "先找出低壓到高壓會改變的軸，再看是哪一種情境觸發這個變化。" },
+  { eyebrow: "4 Axis Dual Channel Analysis", nav: "雙通道分析", title: "偏好與情境，哪個在主導？", deck: "把一般偏好與情境表現並排，辨認穩定、雙高／雙低，以及真正敏感的軸。" },
+  { eyebrow: "Top 3 + Lowest 3 Distinctive Profile", nav: "最高與最低六項", title: "最後只留六個訊號", deck: "前三個是最自然的高點，後三個是需要留意的低點；它們是下一步自我觀察的起點。" }
 ];
+
+function renderPoleSummary(result) {
+  const ranked = Object.keys(poleMeta).map((pole) => ({ pole, score: result.poleScores[pole] })).sort((a, b) => b.score - a.score);
+  const top = ranked.slice(0, 2); const low = ranked.slice(-2).reverse();
+  return `<div class="answer-strip pole-answer-strip"><div><span>主力極點</span><strong>${top.map((item) => `${item.pole} ${item.score}`).join(" · ")}</strong><small>${top.map((item) => poleMeta[item.pole].zh).join("／")}</small></div><div><span>相對較低</span><strong>${low.map((item) => `${item.pole} ${item.score}`).join(" · ")}</strong><small>${low.map((item) => poleMeta[item.pole].zh).join("／")}</small></div></div>`;
+}
+
+function renderCostDetails(result) {
+  return `<details class="cost-details"><summary><span>成本提示</span><b>查看 8 個耗能通道</b><i>＋</i></summary><div class="poles-grid cost-grid">${renderCostCards(result)}</div></details>`;
+}
+
+function renderFacetSummary(result) {
+  const ranked = facetMeta.map((facet) => ({ ...facet, score: result.facetScores[facet.code] })).sort((a, b) => b.score - a.score);
+  const line = (items) => items.map((facet) => `<li><span>${facet.code} · ${escapeHtml(facet.zh)}</span><b>${facet.score}</b></li>`).join("");
+  return `<div class="facet-scoreboard"><div><span class="scoreboard-kicker">最高 3 個機制</span><ol>${line(ranked.slice(0, 3))}</ol></div><div><span class="scoreboard-kicker">最低 3 個機制</span><ol>${line(ranked.slice(-3).reverse())}</ol></div></div>`;
+}
+
+function renderFunctionSummary(result) {
+  const scores = result.cognitiveFunctions || {};
+  const rankings = ["Ne", "Ni", "Se", "Si", "Te", "Ti", "Fe", "Fi"].sort((a, b) => (scores[b] || 0) - (scores[a] || 0));
+  return `<div class="answer-strip function-answer-strip"><div><span>最強訊號</span><strong>${rankings[0]} · ${scores[rankings[0]] || 0}</strong><small>最常被你放在第一順位</small></div><div><span>第二訊號</span><strong>${rankings[1]} · ${scores[rankings[1]] || 0}</strong><small>與第一訊號的距離 ${Math.max(0, (scores[rankings[0]] || 0) - (scores[rankings[1]] || 0))}</small></div><p>這是本次回答中看見的傾向，不等於傳統理論裡預設的功能堆疊。</p></div>`;
+}
+
+function renderDynamicSummary(result) {
+  const shifts = (result.dynamicProfiles || []).filter((profile) => profile.meaningfulShift).sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
+  const lead = shifts[0];
+  return `<div class="answer-strip dynamic-answer-strip"><div><span>會轉檔的軸</span><strong>${shifts.length} / ${Object.keys(axisMeta).length}</strong><small>${lead ? `${lead.axis} 變化最大（Δ ${fmt(lead.delta)}）` : "目前沒有達到顯著變化門檻"}</small></div><p>${lead ? `先讀 ${lead.axis}：它是低壓與高壓之間差距最大的地方。` : "你的低壓與高壓表現目前相對穩定，可以直接看情境表。"}</p></div>`;
+}
+
+function axisStateLabel(stateName) {
+  return { dual_high: "雙側都高", dual_low: "雙側都低", balanced: "接近平衡", context_sensitive: "情境敏感" }[stateName] || (stateName.startsWith("polarized_") ? `偏向 ${stateName.replace("polarized_", "")}` : stateName.replace(/_/g, " "));
+}
+
+function renderChannelLegend() {
+  return `<div class="channel-legend"><div><span class="legend-dot legend-dot-preference"></span><strong>偏好通道</strong><p>你在一般狀態下比較自然的方向。</p></div><div><span class="legend-dot legend-dot-context"></span><strong>情境通道</strong><p>壓力、責任或不確定性下的實際反應。</p></div></div>`;
+}
+
+function renderDistinctiveSummary(result) {
+  const ranked = facetMeta.map((facet) => ({ ...facet, score: result.facetScores[facet.code] })).sort((a, b) => b.score - a.score);
+  return `<div class="distinctive-summary"><div><span>最鮮明高點</span><strong>${ranked.slice(0, 3).map((facet) => `${facet.code} ${facet.score}`).join(" · ")}</strong></div><div><span>最需要留意</span><strong>${ranked.slice(-3).reverse().map((facet) => `${facet.code} ${facet.score}`).join(" · ")}</strong></div></div>`;
+}
 
 function renderContextMap(result) {
   return `<div class="context-wrap"><table class="context-table"><thead><tr><th>Environment</th><th>EI</th><th>SN</th><th>TF</th><th>JP</th></tr></thead><tbody>${["free", "responsibility", "pressure", "uncertainty"].map((context) => `<tr><td>${contextZh(context)}</td>${Object.keys(axisMeta).map((axis) => { const value = result.scenarioContext[axis][context]; return `<td><span class="context-badge ${contextClass(value)}">${contextLabel(value, axis)}</span></td>`; }).join("")}</tr>`).join("")}</tbody></table></div><p class="intro-note context-note">Context sensitivity：${Object.entries(result.contextSensitivity).map(([axis, value]) => `${axis} ${value}`).join(" · ")}（數值越高，情境差異越明顯）</p>`;
@@ -1071,12 +1112,12 @@ function resultPageContent(page, result, variables) {
   const secondaryCopy = copyEntry("function_secondary_intro", variables);
   const secondaryGap = result.functionRankings?.length > 1 ? result.functionRankings[0].score - result.functionRankings[1].score : Infinity;
   if (page === 1) return `<div class="result-hero page1-hero"><div><div class="result-kicker">Your measurement profile · ${escapeHtml(result.scoringVersion)} · ${escapeHtml(RESULT_COPY_VERSION)}</div><h2 class="result-title">${escapeHtml(result.bestFit)}</h2><div class="result-copy-lead"><h3>${copyInlineHtml(bestCopy.title)}</h3>${copyMarkdownHtml(bestCopy.body, variables)}</div><div class="result-actions"><button class="btn-primary" id="restartResult">重新測量</button><button class="btn-secondary" id="printResult">列印報告</button></div></div><div class="confidence-box"><div><div class="confidence-label">${copyInlineHtml(confidenceCopy.title || "Measurement confidence")}</div><div class="confidence-value">${escapeHtml(result.confidence)} <small>${result.confidenceScore}/100</small></div></div>${copyMarkdownHtml(confidenceCopy.body, variables)}</div></div><section class="result-section"><div class="section-heading"><h2>Precision</h2><p>結果邊界與穩定程度</p></div>${renderCopyPanel(precisionCopy, "precision-copy")}</section><section class="result-section"><div class="section-heading"><h2>Measurement quality</h2><p>只影響信心，不直接改寫人格分數</p></div>${renderQuality(result)}</section>`;
-  if (page === 2) return `<section class="result-section page2-architecture"><div class="section-heading"><h2>8 poles in one view</h2><p>先看分布，再看能量成本</p></div>${renderCopyPanel(architectureIntro, "architecture-copy")}<div class="poles-grid">${renderPoleCards(result)}</div><div class="result-subsection"><div class="section-heading"><h2>Axis architecture</h2><p>Relative preference、integration、polarization 與 activity</p></div><div class="architecture-grid">${renderArchitecture(result)}</div></div><div class="result-subsection cost-subsection"><div class="section-heading"><h2>Cognitive cost</h2><p>越高代表越容易在該通道感到耗能</p></div><div class="poles-grid cost-grid">${renderCostCards(result)}</div></div></section>`;
-  if (page === 3) return `<section class="result-section page3-facets"><div class="section-heading"><h2>24 mechanisms</h2><p>每個 Facet 依 L1–L4 展開完整解讀</p></div><div class="facet-intro">分數是位置，文案是語境。逐一展開，就能看見四條軸內部真正拉開差距的反應方式。</div>${renderFacetGroups(result)}</section>`;
-  if (page === 4) return `<section class="result-section page4-functions"><div class="section-heading"><h2>Function signal map</h2><p>由高到低排列的八個功能指標</p></div>${renderCopyPanel(functionIntro, "function-intro-copy")}${secondaryGap <= 1 ? renderCopyPanel(secondaryCopy, "secondary-copy") : ""}${renderFunctionCopies(result)}</section>`;
-  if (page === 5) return `<section class="result-section page5-dynamic"><div class="section-heading"><h2>Dynamic profile</h2><p>低壓與高壓模式的 deterministic comparison</p></div>${renderDynamicCopy(result)}<div class="result-subsection context-subsection"><div class="section-heading"><h2>Context map</h2><p>同一條軸在不同約束下可能採取不同表現</p></div>${renderContextMap(result)}</div></section>`;
-  if (page === 6) return `<section class="result-section page6-dual"><div class="section-heading"><h2>Dual channel analysis</h2><p>每條軸依 24 個 state template 查表</p></div><div class="dual-lede">當偏好與情境訊號一致，傾向會顯得穩定；當兩者分開，才是需要細讀的地方。</div>${renderAxisCopy(result)}</section>`;
-  return `<section class="result-section page7-distinctive"><div class="section-heading"><h2>Distinctive profile</h2><p>Top 3 與 Lowest 3 Facets</p></div>${renderDistinctiveCopies(result)}<div class="report-closure"><strong>讀法建議</strong><p>先從三個高點找到可依賴的自然反應，再用三個低點辨認需要補充能量的場景。這份報告描述的是測量到的模式，不是限制你的標籤。</p></div></section>`;
+  if (page === 2) return `<section class="result-section page2-architecture"><div class="section-heading"><h2>先看誰是主力</h2><p>8 個 pole 的相對強度</p></div>${renderPoleSummary(result)}${renderCopyPanel(architectureIntro, "architecture-copy")}<div class="poles-grid">${renderPoleCards(result)}</div>${renderCostDetails(result)}</section>`;
+  if (page === 3) return `<section class="result-section page3-facets"><div class="section-heading"><h2>先看最高與最低</h2><p>24 個 Facet 依 L1–L4 展開</p></div>${renderFacetSummary(result)}<div class="facet-intro">分數是位置，文案是語境。展開一條軸，再逐一查看六個機制，才看得見總分背後的差異。</div>${renderFacetGroups(result)}</section>`;
+  if (page === 4) return `<section class="result-section page4-functions"><div class="section-heading"><h2>先看最常用的訊號</h2><p>8 個功能指標由高到低排列</p></div>${renderFunctionSummary(result)}${renderCopyPanel(functionIntro, "function-intro-copy")}${secondaryGap <= 1 ? renderCopyPanel(secondaryCopy, "secondary-copy") : ""}${renderFunctionCopies(result)}</section>`;
+  if (page === 5) return `<section class="result-section page5-dynamic"><div class="section-heading"><h2>先找會轉檔的軸</h2><p>低壓與高壓的 deterministic comparison</p></div>${renderDynamicSummary(result)}${renderDynamicCopy(result)}<div class="result-subsection context-subsection"><div class="section-heading"><h2>再看哪種情境觸發</h2><p>同一條軸在不同約束下的實際表現</p></div>${renderContextMap(result)}</div></section>`;
+  if (page === 6) return `<section class="result-section page6-dual"><div class="section-heading"><h2>先讀懂兩個通道</h2><p>偏好與情境並排比較</p></div>${renderChannelLegend()}<div class="result-subsection"><div class="section-heading"><h2>四條軸的結構摘要</h2><p>Relative preference、integration、polarization 與 activity</p></div><div class="architecture-grid">${renderArchitecture(result)}</div></div><div class="result-subsection"><div class="section-heading"><h2>逐軸解讀</h2><p>依 state template 顯示完整文案</p></div>${renderAxisCopy(result)}</div></section>`;
+  return `<section class="result-section page7-distinctive"><div class="section-heading"><h2>先看六個分數</h2><p>Top 3 與 Lowest 3 Facets</p></div>${renderDistinctiveSummary(result)}${renderDistinctiveCopies(result)}<div class="report-closure"><strong>讀法建議</strong><p>先從三個高點找到可依賴的自然反應，再用三個低點辨認需要補充能量的場景。高點不是優越，低點也不是缺陷；它們只是你下一步最值得觀察的地方。</p></div></section>`;
 }
 
 function renderResults() {
@@ -1085,8 +1126,9 @@ function renderResults() {
   state.resultPage = page;
   const variables = resultCopyVariables(result);
   const meta = resultPageMeta[page - 1];
-  const pageTabs = resultPageMeta.map((item, index) => `<button class="result-page-tab ${index + 1 === page ? "is-active" : ""}" data-result-page="${index + 1}" aria-label="Page ${index + 1}: ${escapeHtml(item.eyebrow)}" aria-current="${index + 1 === page ? "page" : "false"}"><span>${String(index + 1).padStart(2, "0")}</span><b>${escapeHtml(item.eyebrow)}</b></button>`).join("");
-  app.innerHTML = `<section class="view result-view result-page result-page-${page}"><header class="result-page-header"><div><div class="result-page-eyebrow">PAGE ${String(page).padStart(2, "0")} · ${escapeHtml(meta.eyebrow)}</div><h1>${escapeHtml(meta.title)}</h1></div><p>${escapeHtml(meta.deck)}</p></header><nav class="result-page-tabs" aria-label="結果頁面">${pageTabs}</nav><div class="result-page-body">${resultPageContent(page, result, variables)}</div><footer class="result-page-nav"><button class="btn-quiet" data-result-prev ${page === 1 ? "disabled" : ""}>← 上一頁</button><span>Page ${page} / ${resultPageMeta.length}</span>${page < resultPageMeta.length ? `<button class="btn-primary" data-result-next>下一頁 →</button>` : `<button class="btn-primary" id="restartResultBottom">重新測量</button>`}</footer></section>`;
+  const pageTitle = typeof meta.title === "function" ? meta.title(result) : meta.title;
+  const pageTabs = resultPageMeta.map((item, index) => `<button class="result-page-tab ${index + 1 === page ? "is-active" : ""}" data-result-page="${index + 1}" aria-label="Page ${index + 1}: ${escapeHtml(item.nav)}" aria-current="${index + 1 === page ? "page" : "false"}"><span>${String(index + 1).padStart(2, "0")}</span><b>${escapeHtml(item.nav)}</b></button>`).join("");
+  app.innerHTML = `<section class="view result-view result-page result-page-${page}"><header class="result-page-header"><div><div class="result-page-eyebrow">PAGE ${String(page).padStart(2, "0")} · ${escapeHtml(meta.eyebrow)}</div><h1>${escapeHtml(pageTitle)}</h1></div><p>${escapeHtml(meta.deck)}</p></header><nav class="result-page-tabs" aria-label="結果頁面">${pageTabs}</nav><div class="result-page-body">${resultPageContent(page, result, variables)}</div><footer class="result-page-nav"><button class="btn-quiet" data-result-prev ${page === 1 ? "disabled" : ""}>← 上一頁</button><span>Page ${page} / ${resultPageMeta.length}</span>${page < resultPageMeta.length ? `<button class="btn-primary" data-result-next>下一頁 →</button>` : `<button class="btn-primary" id="restartResultBottom">重新測量</button>`}</footer></section>`;
   app.querySelectorAll("[data-result-page]").forEach((button) => button.addEventListener("click", () => { state.resultPage = Number(button.dataset.resultPage); persist(); render(); window.scrollTo({ top: 0, behavior: "smooth" }); }));
   app.querySelector("[data-result-prev]")?.addEventListener("click", () => { if (page > 1) { state.resultPage = page - 1; persist(); render(); window.scrollTo({ top: 0, behavior: "smooth" }); } });
   app.querySelector("[data-result-next]")?.addEventListener("click", () => { if (page < resultPageMeta.length) { state.resultPage = page + 1; persist(); render(); window.scrollTo({ top: 0, behavior: "smooth" }); } });
@@ -1108,10 +1150,14 @@ function renderCostCards(result) {
 }
 
 function renderFacetGroups(result) {
+  const openAxis = Object.keys(axisMeta).sort((a, b) => {
+    const aMeta = axisMeta[a]; const bMeta = axisMeta[b];
+    return Math.abs((result.poleScores[aMeta.positive] || 0) - (result.poleScores[aMeta.negative] || 0)) - Math.abs((result.poleScores[bMeta.positive] || 0) - (result.poleScores[bMeta.negative] || 0));
+  })[0];
   return Object.keys(axisMeta).map((axis) => {
     const meta = axisMeta[axis];
     const facets = facetMeta.filter((facet) => facet.axis === axis);
-    return `<details class="facet-axis" ${axis === "SN" ? "open" : ""}><summary><span class="facet-axis-code">${axis}</span><span class="facet-axis-title">${escapeHtml(meta.title)}</span><span class="facet-axis-total">${result.poleScores[meta.positive]} / ${result.poleScores[meta.negative]}</span></summary><div class="facet-list">${facets.map((facet) => { const score = result.facetScores[facet.code]; const level = facetLevel(score); const copy = copyEntry(`facet_${facet.code}_${level}`); return `<details class="facet-row"><summary><span>${escapeHtml(facet.zh)}<br /><small style="color:#899287">${escapeHtml(facet.name)} · ${level}</small></span><strong>${score}</strong><div class="facet-bar"><i style="width:${score}%"></i></div></summary><div class="facet-copy-body">${copyMarkdownHtml(copy.body)}</div></details>`; }).join("")}</div></details>`;
+    return `<details class="facet-axis" ${axis === openAxis ? "open" : ""}><summary><span class="facet-axis-code">${axis}</span><span class="facet-axis-title">${escapeHtml(meta.title)}</span><span class="facet-axis-total">${result.poleScores[meta.positive]} / ${result.poleScores[meta.negative]}</span></summary><div class="facet-list">${facets.map((facet) => { const score = result.facetScores[facet.code]; const level = facetLevel(score); const copy = copyEntry(`facet_${facet.code}_${level}`); return `<details class="facet-row"><summary><span>${escapeHtml(facet.zh)}<br /><small style="color:#899287">${escapeHtml(facet.name)} · ${level}</small></span><strong>${score}</strong><div class="facet-bar"><i style="width:${score}%"></i></div></summary><div class="facet-copy-body">${copyMarkdownHtml(copy.body)}</div></details>`; }).join("")}</div></details>`;
   }).join("");
 }
 
