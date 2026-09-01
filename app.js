@@ -460,6 +460,7 @@ async function hydrateQuestionBank() {
       state.initialScoring = null;
       state.view = "intro";
       state.probeMode = false;
+      state.resultPage = 1;
     }
     state.questionBankVersion = QUESTION_BANK_VERSION;
     questionBankReady = true;
@@ -510,7 +511,8 @@ const state = {
   questionStartedAt: null,
   initialScoring: null,
   result: null,
-  probeMode: false
+  probeMode: false,
+  resultPage: 1
 };
 
 const app = document.getElementById("app");
@@ -546,6 +548,7 @@ function restore() {
     if (saved.questionBankVersion !== QUESTION_BANK_VERSION) return;
     Object.assign(state, saved);
     if (state.view === "quiz" && state.currentIndex >= state.itemOrder.length) state.currentIndex = state.itemOrder.length - 1;
+    state.resultPage = clamp(Number(state.resultPage) || 1, 1, 7);
   } catch (_) { /* ignore malformed local data */ }
 }
 
@@ -565,6 +568,7 @@ function resetState() {
   state.initialScoring = null;
   state.result = null;
   state.probeMode = false;
+  state.resultPage = 1;
   localStorage.removeItem(STORAGE_KEY);
   render();
 }
@@ -580,6 +584,7 @@ function startTest(resume = false) {
     state.initialScoring = null;
     state.result = null;
     state.probeMode = false;
+    state.resultPage = 1;
   }
   state.view = "quiz";
   state.questionStartedAt = Date.now();
@@ -613,6 +618,7 @@ function fillDemo() {
   state.initialScoring = scoreAll(state.itemOrder, state.responses);
   state.result = state.initialScoring;
   state.view = "result";
+  state.resultPage = 1;
   state.probeMode = false;
   persist();
   render();
@@ -720,6 +726,7 @@ function finishCoreOrResult() {
   }
   state.result = scoreAll(state.itemOrder, state.responses);
   state.view = "result";
+  state.resultPage = 1;
   persist();
   render();
 }
@@ -1037,9 +1044,25 @@ function renderDistinctiveCopies(result) {
   }).join("")}</div>`).join("")}</div>`;
 }
 
-function renderResults() {
-  const result = state.result || scoreAll(state.itemOrder, state.responses);
-  const variables = resultCopyVariables(result);
+const resultPageMeta = [
+  { eyebrow: "Type + Precision + Confidence", title: "先找到入口，再保留複雜度", deck: "這一頁先回答最實用的問題：你的結果是什麼、邊界在哪裡，以及這次測量值得信任到什麼程度。" },
+  { eyebrow: "8 Pole Architecture", title: "你的八極架構", deck: "把四條軸拆成八個可觀察的極點，看看哪些能量自然流動，哪些地方需要刻意調度。" },
+  { eyebrow: "24 Facets", title: "輪廓藏在 24 個機制裡", deck: "總分只是摘要；Facet 讓你看見同一條軸內部，哪些反應模式真正拉開了差距。" },
+  { eyebrow: "8 Cognitive Function Indicators", title: "八個認知功能訊號", deck: "這不是固定的功能排序，而是一張訊號地圖：你如何接收資訊、組織判斷，再把它交給世界。" },
+  { eyebrow: "Dynamic Profile", title: "壓力不是另一個你", deck: "低壓、高壓與責任情境會改變表現方式；動態頁把這些變化放在同一條時間線上閱讀。" },
+  { eyebrow: "4 Axis Dual Channel Analysis", title: "四條軸，兩個通道", deck: "偏好分數與情境通道一起看，才能分辨穩定傾向、雙高雙低，以及真正的情境敏感。" },
+  { eyebrow: "Top 3 + Lowest 3 Distinctive Profile", title: "留下最鮮明的六個訊號", deck: "最後把報告收斂成三個高點與三個低點，作為你接下來觀察自己的起點。" }
+];
+
+function renderContextMap(result) {
+  return `<div class="context-wrap"><table class="context-table"><thead><tr><th>Environment</th><th>EI</th><th>SN</th><th>TF</th><th>JP</th></tr></thead><tbody>${["free", "responsibility", "pressure", "uncertainty"].map((context) => `<tr><td>${contextZh(context)}</td>${Object.keys(axisMeta).map((axis) => { const value = result.scenarioContext[axis][context]; return `<td><span class="context-badge ${contextClass(value)}">${contextLabel(value, axis)}</span></td>`; }).join("")}</tr>`).join("")}</tbody></table></div><p class="intro-note context-note">Context sensitivity：${Object.entries(result.contextSensitivity).map(([axis, value]) => `${axis} ${value}`).join(" · ")}（數值越高，情境差異越明顯）</p>`;
+}
+
+function renderQuality(result) {
+  return `<div class="quality-grid"><div class="architecture-card"><h3>Consistency</h3><div class="arch-score"><b>${result.quality.consistency}</b> / 100</div><p class="arch-summary">相同機制的不同表述是否大致一致。</p></div><div class="architecture-card"><h3>Attention</h3><div class="arch-score"><b>${result.quality.attention}</b> / 100</div><p class="arch-summary">是否出現大量完全相同的選項。</p></div><div class="architecture-card"><h3>Response time</h3><div class="arch-score"><b>${(result.quality.averageResponse / 1000).toFixed(1)}s</b></div><p class="arch-summary">${result.quality.speedAnomaly ? "速度偏快，僅降低結果信心。" : "沒有極端快速作答訊號。"}</p></div><div class="architecture-card"><h3>Scoring record</h3><div class="arch-score"><b>${result.scoringVersion}</b></div><p class="arch-summary">每一題回答與時間戳都保留，可在未來重新計算。</p></div></div>`;
+}
+
+function resultPageContent(page, result, variables) {
   const bestCopy = copyEntry("p1_best_fit_default", variables);
   const precisionCopy = copyEntry(`p1_precision_x${(result.boundaryAxes || []).length}`, variables);
   const confidenceCopy = copyEntry(`confidence_${String(result.confidence || "medium").toLowerCase()}`, variables);
@@ -1047,25 +1070,29 @@ function renderResults() {
   const functionIntro = copyEntry("p4_intro", variables);
   const secondaryCopy = copyEntry("function_secondary_intro", variables);
   const secondaryGap = result.functionRankings?.length > 1 ? result.functionRankings[0].score - result.functionRankings[1].score : Infinity;
-  app.innerHTML = `<section class="view result-view">
-    <div class="result-hero">
-      <div><div class="result-kicker">Your measurement profile · ${escapeHtml(result.scoringVersion)} · ${escapeHtml(RESULT_COPY_VERSION)}</div><h1 class="result-title">${escapeHtml(result.bestFit)}</h1><div class="result-copy-lead"><h2>${copyInlineHtml(bestCopy.title)}</h2>${copyMarkdownHtml(bestCopy.body, variables)}</div><div class="result-actions"><button class="btn-primary" id="restartResult">重新測量</button><button class="btn-secondary" id="printResult">列印報告</button></div></div>
-      <div class="confidence-box"><div><div class="confidence-label">${copyInlineHtml(confidenceCopy.title || "Measurement confidence")}</div><div class="confidence-value">${escapeHtml(result.confidence)} <small>${result.confidenceScore}/100</small></div></div>${copyMarkdownHtml(confidenceCopy.body, variables)}</div>
-    </div>
-    <section class="result-section"><div class="section-heading"><h2>Type + Precision</h2><p>Page 1 · 固定結果文案</p></div>${renderCopyPanel(precisionCopy, "precision-copy")}</section>
-    <section class="result-section"><div class="section-heading"><h2>Architecture layer · 8 poles</h2><p>Page 2 · ${copyInlineHtml(architectureIntro.title)}</p></div>${renderCopyPanel(architectureIntro, "architecture-copy")}<div class="poles-grid">${renderPoleCards(result)}</div></section>
-    <section class="result-section"><div class="section-heading"><h2>Cognitive cost layer · 8 channels</h2><p>成本分數獨立呈現：越高代表越容易在該通道感到耗能，不會扣除你的能力或偏好分數。</p></div><div class="poles-grid cost-grid">${renderCostCards(result)}</div></section>
-    <section class="result-section"><div class="section-heading"><h2>Facet layer · 24 mechanisms</h2><p>Page 3 · 每個 Facet 依 L1–L4 查表顯示完整解讀。</p></div>${renderFacetGroups(result)}</section>
-    <section class="result-section"><div class="section-heading"><h2>Axis architecture</h2><p>Relative preference、integration、polarization 與 activity 同時保留。</p></div><div class="architecture-grid">${renderArchitecture(result)}</div></section>
-    <section class="result-section"><div class="section-heading"><h2>Context map</h2><p>同一條軸在不同約束下可能採取不同表現。</p></div><div class="context-wrap"><table class="context-table"><thead><tr><th>Environment</th><th>EI</th><th>SN</th><th>TF</th><th>JP</th></tr></thead><tbody>${["free", "responsibility", "pressure", "uncertainty"].map((context) => `<tr><td>${contextZh(context)}</td>${Object.keys(axisMeta).map((axis) => { const value = result.scenarioContext[axis][context]; return `<td><span class="context-badge ${contextClass(value)}">${contextLabel(value, axis)}</span></td>`; }).join("")}</tr>`).join("")}</tbody></table></div><p class="intro-note" style="margin-top:11px">Context sensitivity：${Object.entries(result.contextSensitivity).map(([axis, value]) => `${axis} ${value}`).join(" · ")}（數值越高，情境差異越明顯）</p></section>
-    <section class="result-section"><div class="section-heading"><h2>Cognitive Function Indicators</h2><p>Page 4 · ${copyInlineHtml(functionIntro.title || "")}</p></div>${renderCopyPanel(functionIntro, "function-intro-copy")}${secondaryGap <= 1 ? renderCopyPanel(secondaryCopy, "secondary-copy") : ""}${renderFunctionCopies(result)}</section>
-    <section class="result-section"><div class="section-heading"><h2>Dynamic Profile</h2><p>Page 5 · 低壓與高壓模式的 deterministic comparison。</p></div>${renderDynamicCopy(result)}</section>
-    <section class="result-section"><div class="section-heading"><h2>Dual Channel Analysis</h2><p>Page 6 · 每條軸依 24 個 state template 查表。</p></div>${renderAxisCopy(result)}</section>
-    <section class="result-section"><div class="section-heading"><h2>Distinctive Profile</h2><p>Page 7 · Top 3 與 Lowest 3 Facets 的完整結果文案。</p></div>${renderDistinctiveCopies(result)}</section>
-    <section class="result-section"><div class="section-heading"><h2>Response quality</h2><p>只影響 Measurement Confidence，不直接改寫人格分數。</p></div><div class="architecture-grid"><div class="architecture-card"><h3>Consistency</h3><div class="arch-score"><b>${result.quality.consistency}</b> / 100</div><p class="arch-summary">相同機制的不同表述是否大致一致。</p></div><div class="architecture-card"><h3>Attention</h3><div class="arch-score"><b>${result.quality.attention}</b> / 100</div><p class="arch-summary">是否出現大量完全相同的選項。</p></div><div class="architecture-card"><h3>Response time</h3><div class="arch-score"><b>${(result.quality.averageResponse / 1000).toFixed(1)}s</b></div><p class="arch-summary">${result.quality.speedAnomaly ? "速度偏快，僅降低結果信心。" : "沒有極端快速作答訊號。"}</p></div><div class="architecture-card"><h3>Scoring record</h3><div class="arch-score"><b>${result.scoringVersion}</b></div><p class="arch-summary">每一題回答與時間戳都保留，可在未來重新計算。</p></div></div></section>
-  </section>`;
-  document.getElementById("restartResult").addEventListener("click", resetState);
-  document.getElementById("printResult").addEventListener("click", () => window.print());
+  if (page === 1) return `<div class="result-hero page1-hero"><div><div class="result-kicker">Your measurement profile · ${escapeHtml(result.scoringVersion)} · ${escapeHtml(RESULT_COPY_VERSION)}</div><h2 class="result-title">${escapeHtml(result.bestFit)}</h2><div class="result-copy-lead"><h3>${copyInlineHtml(bestCopy.title)}</h3>${copyMarkdownHtml(bestCopy.body, variables)}</div><div class="result-actions"><button class="btn-primary" id="restartResult">重新測量</button><button class="btn-secondary" id="printResult">列印報告</button></div></div><div class="confidence-box"><div><div class="confidence-label">${copyInlineHtml(confidenceCopy.title || "Measurement confidence")}</div><div class="confidence-value">${escapeHtml(result.confidence)} <small>${result.confidenceScore}/100</small></div></div>${copyMarkdownHtml(confidenceCopy.body, variables)}</div></div><section class="result-section"><div class="section-heading"><h2>Precision</h2><p>結果邊界與穩定程度</p></div>${renderCopyPanel(precisionCopy, "precision-copy")}</section><section class="result-section"><div class="section-heading"><h2>Measurement quality</h2><p>只影響信心，不直接改寫人格分數</p></div>${renderQuality(result)}</section>`;
+  if (page === 2) return `<section class="result-section page2-architecture"><div class="section-heading"><h2>8 poles in one view</h2><p>先看分布，再看能量成本</p></div>${renderCopyPanel(architectureIntro, "architecture-copy")}<div class="poles-grid">${renderPoleCards(result)}</div><div class="result-subsection"><div class="section-heading"><h2>Axis architecture</h2><p>Relative preference、integration、polarization 與 activity</p></div><div class="architecture-grid">${renderArchitecture(result)}</div></div><div class="result-subsection cost-subsection"><div class="section-heading"><h2>Cognitive cost</h2><p>越高代表越容易在該通道感到耗能</p></div><div class="poles-grid cost-grid">${renderCostCards(result)}</div></div></section>`;
+  if (page === 3) return `<section class="result-section page3-facets"><div class="section-heading"><h2>24 mechanisms</h2><p>每個 Facet 依 L1–L4 展開完整解讀</p></div><div class="facet-intro">分數是位置，文案是語境。逐一展開，就能看見四條軸內部真正拉開差距的反應方式。</div>${renderFacetGroups(result)}</section>`;
+  if (page === 4) return `<section class="result-section page4-functions"><div class="section-heading"><h2>Function signal map</h2><p>由高到低排列的八個功能指標</p></div>${renderCopyPanel(functionIntro, "function-intro-copy")}${secondaryGap <= 1 ? renderCopyPanel(secondaryCopy, "secondary-copy") : ""}${renderFunctionCopies(result)}</section>`;
+  if (page === 5) return `<section class="result-section page5-dynamic"><div class="section-heading"><h2>Dynamic profile</h2><p>低壓與高壓模式的 deterministic comparison</p></div>${renderDynamicCopy(result)}<div class="result-subsection context-subsection"><div class="section-heading"><h2>Context map</h2><p>同一條軸在不同約束下可能採取不同表現</p></div>${renderContextMap(result)}</div></section>`;
+  if (page === 6) return `<section class="result-section page6-dual"><div class="section-heading"><h2>Dual channel analysis</h2><p>每條軸依 24 個 state template 查表</p></div><div class="dual-lede">當偏好與情境訊號一致，傾向會顯得穩定；當兩者分開，才是需要細讀的地方。</div>${renderAxisCopy(result)}</section>`;
+  return `<section class="result-section page7-distinctive"><div class="section-heading"><h2>Distinctive profile</h2><p>Top 3 與 Lowest 3 Facets</p></div>${renderDistinctiveCopies(result)}<div class="report-closure"><strong>讀法建議</strong><p>先從三個高點找到可依賴的自然反應，再用三個低點辨認需要補充能量的場景。這份報告描述的是測量到的模式，不是限制你的標籤。</p></div></section>`;
+}
+
+function renderResults() {
+  const result = state.result || scoreAll(state.itemOrder, state.responses);
+  const page = clamp(Number(state.resultPage) || 1, 1, resultPageMeta.length);
+  state.resultPage = page;
+  const variables = resultCopyVariables(result);
+  const meta = resultPageMeta[page - 1];
+  const pageTabs = resultPageMeta.map((item, index) => `<button class="result-page-tab ${index + 1 === page ? "is-active" : ""}" data-result-page="${index + 1}" aria-label="Page ${index + 1}: ${escapeHtml(item.eyebrow)}" aria-current="${index + 1 === page ? "page" : "false"}"><span>${String(index + 1).padStart(2, "0")}</span><b>${escapeHtml(item.eyebrow)}</b></button>`).join("");
+  app.innerHTML = `<section class="view result-view result-page result-page-${page}"><header class="result-page-header"><div><div class="result-page-eyebrow">PAGE ${String(page).padStart(2, "0")} · ${escapeHtml(meta.eyebrow)}</div><h1>${escapeHtml(meta.title)}</h1></div><p>${escapeHtml(meta.deck)}</p></header><nav class="result-page-tabs" aria-label="結果頁面">${pageTabs}</nav><div class="result-page-body">${resultPageContent(page, result, variables)}</div><footer class="result-page-nav"><button class="btn-quiet" data-result-prev ${page === 1 ? "disabled" : ""}>← 上一頁</button><span>Page ${page} / ${resultPageMeta.length}</span>${page < resultPageMeta.length ? `<button class="btn-primary" data-result-next>下一頁 →</button>` : `<button class="btn-primary" id="restartResultBottom">重新測量</button>`}</footer></section>`;
+  app.querySelectorAll("[data-result-page]").forEach((button) => button.addEventListener("click", () => { state.resultPage = Number(button.dataset.resultPage); persist(); render(); window.scrollTo({ top: 0, behavior: "smooth" }); }));
+  app.querySelector("[data-result-prev]")?.addEventListener("click", () => { if (page > 1) { state.resultPage = page - 1; persist(); render(); window.scrollTo({ top: 0, behavior: "smooth" }); } });
+  app.querySelector("[data-result-next]")?.addEventListener("click", () => { if (page < resultPageMeta.length) { state.resultPage = page + 1; persist(); render(); window.scrollTo({ top: 0, behavior: "smooth" }); } });
+  app.querySelector("#restartResult")?.addEventListener("click", resetState);
+  app.querySelector("#restartResultBottom")?.addEventListener("click", resetState);
+  app.querySelector("#printResult")?.addEventListener("click", () => window.print());
 }
 
 function renderPoleCards(result) {
