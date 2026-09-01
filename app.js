@@ -6,6 +6,8 @@ const RESULT_COPY_FILE = "結果文字.txt";
 const RESULT_COPY_VERSION = "DCA-Report-v1.0-candidate-zhHant";
 const STORAGE_KEY = "mbti-architecture-lab-v1";
 const LOCAL_SAVE_VERSION = 2;
+const ANSWER_EXPORT_FORMAT = "mbti-architecture-lab.answers";
+const ANSWER_EXPORT_VERSION = 1;
 
 const JUNG_FUNCTION_ORDER = ["Ne", "Ni", "Se", "Si", "Te", "Ti", "Fe", "Fi"];
 const JUNG_FUNCTION_LABELS = { Ne: "外向直覺", Ni: "內向直覺", Se: "外向感覺", Si: "內向感覺", Te: "外向思考", Ti: "內向思考", Fe: "外向情感", Fi: "內向情感" };
@@ -586,6 +588,134 @@ function updateSavedState() {
   else savedStateEl.textContent = count ? `${count} 題已保存 · 本機` : "尚未開始";
 }
 
+function answerExportPayload() {
+  const responses = Object.fromEntries(Object.entries(state.responses || {}).filter(([, response]) => response && typeof response === "object").map(([itemId, response]) => [itemId, { ...response }]));
+  return {
+    format: ANSWER_EXPORT_FORMAT,
+    formatVersion: ANSWER_EXPORT_VERSION,
+    exportedAt: new Date().toISOString(),
+    questionBankVersion: state.questionBankVersion,
+    scoringVersion: SCORING_VERSION,
+    itemOrder: state.itemOrder.map((item) => item.item_id),
+    responses
+  };
+}
+
+function exportAnswers() {
+  const answerCount = Object.keys(state.responses || {}).length;
+  if (!answerCount) return;
+  const blob = new Blob([JSON.stringify(answerExportPayload(), null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  const stamp = new Date().toISOString().slice(0, 10);
+  anchor.href = url;
+  anchor.download = `mbti-answers-${stamp}.json`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  const status = document.getElementById("answerTransferStatus");
+  if (status) status.textContent = `已匯出 ${answerCount} 題答案`;
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function finiteNumber(value) {
+  const number = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function sanitizeImportedResponse(item, candidate, sessionId) {
+  if (!candidate || typeof candidate !== "object") return null;
+  const response = { user_id: sessionId, item_id: item.item_id, responseTime: Math.max(0, finiteNumber(candidate.responseTime) || 0), timestamp: candidate.timestamp || Date.now(), scoring_version: SCORING_VERSION };
+  if (item.format === "micro_sim") {
+    const step1Keys = new Set((item.step1Options || []).map((option) => option.key));
+    const step2Keys = new Set((item.step2Options || []).map((option) => option.key));
+    if (step1Keys.has(String(candidate.step1))) response.step1 = String(candidate.step1);
+    if (step2Keys.has(String(candidate.step2))) response.step2 = String(candidate.step2);
+    return response.step1 || response.step2 ? response : null;
+  }
+  const raw = Object.prototype.hasOwnProperty.call(candidate, "value") ? candidate.value : candidate.answer;
+  if (raw === null || raw === undefined || raw === "") {
+    if (item.format === "behavior" && (Object.prototype.hasOwnProperty.call(candidate, "value") || Object.prototype.hasOwnProperty.call(candidate, "answer"))) {
+      response.answer = null;
+      response.value = null;
+      return response;
+    }
+    return null;
+  }
+  const allowed = (item.options || []).map((option) => option.value);
+  const isStringOption = allowed.some((option) => typeof option === "string");
+  const value = isStringOption ? String(raw) : finiteNumber(raw);
+  if (value === null || !allowed.some((option) => String(option) === String(value))) return null;
+  response.answer = value;
+  response.value = value;
+  return response;
+}
+
+function importedItemOrder(payload, currentById) {
+  const requested = Array.isArray(payload.itemOrder) ? payload.itemOrder.map(String) : [];
+  const ordered = requested.map((itemId) => currentById.get(itemId)).filter(Boolean);
+  const currentCore = buildInitialOrder();
+  const seen = new Set(ordered.map((item) => item.item_id));
+  currentCore.forEach((item) => { if (!seen.has(item.item_id)) { ordered.push(item); seen.add(item.item_id); } });
+  return ordered.length >= 80 ? ordered : currentCore;
+}
+
+async function importAnswersFile(file) {
+  if (!questionBankReady) throw new Error("題庫仍在載入，請稍後再試。");
+  const payload = JSON.parse(await file.text());
+  if (payload?.format !== ANSWER_EXPORT_FORMAT || Number(payload.formatVersion) !== ANSWER_EXPORT_VERSION) throw new Error("這不是可辨識的 MBTI 作答答案檔。");
+  if (!payload.responses || typeof payload.responses !== "object") throw new Error("答案檔沒有 responses 資料。");
+  const currentById = new Map(ITEM_BANK.allItems.map((item) => [item.item_id, item]));
+  const order = importedItemOrder(payload, currentById);
+  const sessionId = `import-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const responses = {};
+  Object.entries(payload.responses).forEach(([itemId, candidate]) => {
+    const item = currentById.get(itemId);
+    const sanitized = item ? sanitizeImportedResponse(item, candidate, sessionId) : null;
+    if (sanitized) responses[itemId] = sanitized;
+  });
+  if (!Object.keys(responses).length) throw new Error("答案檔沒有任何符合目前題庫的有效答案。");
+  state.sessionId = sessionId;
+  state.itemOrder = order;
+  state.responses = responses;
+  state.currentIndex = Math.max(0, order.findIndex((item) => !isCompleteResponse(item, responses[item.item_id])));
+  if (!Number.isFinite(state.currentIndex) || state.currentIndex < 0) state.currentIndex = 0;
+  state.startedAt = Date.now();
+  state.questionStartedAt = Date.now();
+  state.initialScoring = null;
+  state.resultPage = 1;
+  state.probeMode = order.some((item) => item.format === "probe");
+  state.demoMode = false;
+  state.result = order.every((item) => isCompleteResponse(item, responses[item.item_id])) ? scoreAll(order, responses) : null;
+  state.view = state.result ? "result" : "quiz";
+  state.savedAt = null;
+  persist();
+  render();
+}
+
+function bindAnswerTransferControls() {
+  const exportButton = document.getElementById("exportAnswers");
+  const importButton = document.getElementById("importAnswersButton");
+  const input = document.getElementById("importAnswersInput");
+  const status = document.getElementById("answerTransferStatus");
+  exportButton?.addEventListener("click", exportAnswers);
+  importButton?.addEventListener("click", () => input?.click());
+  input?.addEventListener("change", async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    try {
+      await importAnswersFile(file);
+    } catch (error) {
+      if (status) status.textContent = error instanceof SyntaxError ? "答案檔不是有效 JSON。" : error.message;
+    }
+  });
+}
+
+function renderAnswerTransferControls(hasAnswers) {
+  return `<div class="answer-transfer"><button class="btn-secondary" id="exportAnswers" ${hasAnswers ? "" : "disabled"}>匯出答案</button><button class="btn-quiet" id="importAnswersButton">匯入答案</button><input id="importAnswersInput" type="file" accept="application/json,.json" hidden /><span id="answerTransferStatus" role="status"></span></div>`;
+}
+
 function resetState() {
   state.view = "intro";
   state.sessionId = `session-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -976,6 +1106,7 @@ function renderIntro() {
         </div>
       </div>
     </div>
+    ${renderAnswerTransferControls(Boolean(hasResponses))}
     <div class="intro-divider">
       <div class="intro-stat"><b>80</b><span>核心題目</span></div>
       <div class="intro-stat"><b>+8</b><span>最多動態確認題</span></div>
@@ -986,6 +1117,7 @@ function renderIntro() {
   document.getElementById("startButton").addEventListener("click", () => { if (hasSavedResult) { state.view = "result"; persist(); render(); } else startTest(Boolean(hasProgress)); });
   document.getElementById("demoButton").addEventListener("click", fillDemo);
   document.getElementById("restartButton")?.addEventListener("click", resetState);
+  bindAnswerTransferControls();
 }
 
 function renderQuiz() {
@@ -1193,13 +1325,14 @@ function renderResults() {
   const meta = resultPageMeta[page - 1];
   const pageTitle = typeof meta.title === "function" ? meta.title(result) : meta.title;
   const pageTabs = resultPageMeta.map((item, index) => `<button class="result-page-tab ${index + 1 === page ? "is-active" : ""}" data-result-page="${index + 1}" aria-label="Page ${index + 1}: ${escapeHtml(item.nav)}" aria-current="${index + 1 === page ? "page" : "false"}"><span>${String(index + 1).padStart(2, "0")}</span><b>${escapeHtml(item.nav)}</b></button>`).join("");
-  app.innerHTML = `<section class="view result-view result-page result-page-${page}"><header class="result-page-header"><div><div class="result-page-eyebrow">PAGE ${String(page).padStart(2, "0")} · ${escapeHtml(meta.eyebrow)}</div><h1>${escapeHtml(pageTitle)}</h1></div><p>${escapeHtml(meta.deck)}</p></header><nav class="result-page-tabs" aria-label="結果頁面">${pageTabs}</nav><div class="result-page-body">${resultPageContent(page, result, variables)}</div><footer class="result-page-nav"><button class="btn-quiet" data-result-prev ${page === 1 ? "disabled" : ""}>← 上一頁</button><span>Page ${page} / ${resultPageMeta.length}</span>${page < resultPageMeta.length ? `<button class="btn-primary" data-result-next>下一頁 →</button>` : `<button class="btn-primary" id="restartResultBottom">重新測量</button>`}</footer></section>`;
+  app.innerHTML = `<section class="view result-view result-page result-page-${page}"><header class="result-page-header"><div><div class="result-page-eyebrow">PAGE ${String(page).padStart(2, "0")} · ${escapeHtml(meta.eyebrow)}</div><h1>${escapeHtml(pageTitle)}</h1></div><p>${escapeHtml(meta.deck)}</p></header><nav class="result-page-tabs" aria-label="結果頁面">${pageTabs}</nav><div class="result-page-tools">${renderAnswerTransferControls(Object.keys(state.responses || {}).length > 0)}</div><div class="result-page-body">${resultPageContent(page, result, variables)}</div><footer class="result-page-nav"><button class="btn-quiet" data-result-prev ${page === 1 ? "disabled" : ""}>← 上一頁</button><span>Page ${page} / ${resultPageMeta.length}</span>${page < resultPageMeta.length ? `<button class="btn-primary" data-result-next>下一頁 →</button>` : `<button class="btn-primary" id="restartResultBottom">重新測量</button>`}</footer></section>`;
   app.querySelectorAll("[data-result-page]").forEach((button) => button.addEventListener("click", () => { state.resultPage = Number(button.dataset.resultPage); persist(); render(); window.scrollTo({ top: 0, behavior: "smooth" }); }));
   app.querySelector("[data-result-prev]")?.addEventListener("click", () => { if (page > 1) { state.resultPage = page - 1; persist(); render(); window.scrollTo({ top: 0, behavior: "smooth" }); } });
   app.querySelector("[data-result-next]")?.addEventListener("click", () => { if (page < resultPageMeta.length) { state.resultPage = page + 1; persist(); render(); window.scrollTo({ top: 0, behavior: "smooth" }); } });
   app.querySelector("#restartResult")?.addEventListener("click", resetState);
   app.querySelector("#restartResultBottom")?.addEventListener("click", resetState);
   app.querySelector("#printResult")?.addEventListener("click", () => window.print());
+  bindAnswerTransferControls();
 }
 
 function renderPoleCards(result) {

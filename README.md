@@ -22,6 +22,7 @@ python3 -m http.server 4173
 - `SCORING_VERSION` 目前為 `1.1`、`QUESTION_BANK_VERSION` 為 `DCA-v2.1`；每份 response 會保存 `user_id`、`item_id`、`answer`、`responseTime`、`timestamp` 與 scoring version
 - 結果頁提供 8 poles、8 cognitive cost channels、24 facets、integration、polarization、activity、context map、response quality 與 measurement confidence
 - Page 4 會以八個 Cognitive Function Indicators 分數，和 16 組標準 Jung function stack 做加權相似度比對，顯示最接近的 MBTI 轉換結果；這個轉換只在 Page 4 顯示，不會改寫 Page 1 的 Best-fit
+- 開始頁與結果頁提供「匯出答案」和「匯入答案」；匯出檔只保存題目 ID 順序與原始 responses（包含未遇過／不適用的 null 回答），匯入後會以目前版本的題庫、演算法與結果文案重新計算
 - `RESULT_COPY_VERSION` 為 `DCA-Report-v1.0-candidate-zhHant`，完整載入 205 個結果模板：Page 1–7、Facet 分級、Cognitive Function、Dynamic Profile、Dual Channel Analysis 與 Distinctive Profile
 
 這版以瀏覽器 `localStorage` 保存測量進度與結果。每次作答、翻頁與離開頁面都會更新本機紀錄；只有按下「重新測驗」才會清除紀錄。查看示範報告會使用暫時資料，不會覆蓋既有作答。未連接遠端資料庫或 AI 文字生成服務；後續可直接把 `state.responses` 與 `scoreAll` 接到 API。
