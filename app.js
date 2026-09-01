@@ -1,13 +1,14 @@
 /* MBTI Architecture Lab — versioned measurement prototype */
-const SCORING_VERSION = "1.0";
-const QUESTION_BANK_VERSION = "DCA-v1.1";
+const SCORING_VERSION = "1.1";
+const QUESTION_BANK_VERSION = "DCA-v2.1";
+const QUESTION_BANK_FILE = "題庫2.txt";
 const STORAGE_KEY = "mbti-architecture-lab-v1";
 
 const axisMeta = {
-  EI: { positive: "E", negative: "I", title: "External / Internal Orientation", labels: ["外部導向", "內部導向"] },
+  EI: { positive: "I", negative: "E", title: "Internal / External Orientation", labels: ["內部導向", "外部導向"] },
   SN: { positive: "N", negative: "S", title: "Abstract / Concrete Information", labels: ["抽象導向", "具體導向"] },
-  TF: { positive: "T", negative: "F", title: "Analytical / Value Decision", labels: ["分析導向", "價值／人本導向"] },
-  JP: { positive: "J", negative: "P", title: "Structure / Adaptive Exploration", labels: ["結構導向", "適應探索導向"] }
+  TF: { positive: "F", negative: "T", title: "Value / Analytical Decision", labels: ["價值／人本導向", "分析導向"] },
+  JP: { positive: "P", negative: "J", title: "Adaptive Exploration / Structure", labels: ["適應探索導向", "結構導向"] }
 };
 
 const poleMeta = {
@@ -184,6 +185,7 @@ function makeItems() {
 }
 
 let ITEM_BANK = makeItems();
+let questionBankReady = false;
 
 function stripItemTag(text) {
   return String(text || "").replace(/\s*（\s*(?:`?(?:function|facet|Pole|Tag)\b)[\s\S]*?）\s*$/, "").trim();
@@ -191,115 +193,176 @@ function stripItemTag(text) {
 
 function contextBucket(meta) {
   const source = `${meta.context_type || meta.context || ""} ${meta.pressure_level || ""}`.toLowerCase();
+  if (/pressure|crisis|sunk[_ ]cost|conflict/.test(source) || meta.pressure_level === "high") return "pressure";
   if (/responsibility|high_responsibility|interpersonal_conflict|high_responsibility/.test(source)) return "responsibility";
-  if (/pressure_time|pressure_social|crisis|environment_change|sunk_cost|conflict/.test(source) || meta.pressure_level === "high") return "pressure";
+  if (/uncertainty|unknown|ambiguous|ambiguity|new[_ ]domain|disruption|environment[_ ]change|sudden[_ ]change/.test(source)) return "uncertainty";
   if (/free|baseline|peer_review|ideation|exploration|low/.test(source) && meta.pressure_level !== "high") return "free";
   if (/responsibility|conflict|impact|social|energy/.test(source)) return "responsibility";
-  if (/uncertainty|unknown|ambiguous|change|pressure/.test(source)) return "uncertainty";
+  if (/change/.test(source)) return "uncertainty";
   return meta.pressure_level === "high" ? "pressure" : "free";
 }
 
-function parseQuestionBank(markdown) {
-  const matches = [...markdown.matchAll(/```json\s*([\s\S]*?)\s*```/g)];
-  const records = matches.map((match, index) => {
-    const meta = JSON.parse(match[1]);
-    const start = match.index + match[0].length;
-    const end = index + 1 < matches.length ? matches[index + 1].index : markdown.length;
-    return { meta, section: markdown.slice(start, end) };
+function cleanVisibleText(text) {
+  return String(text || "")
+    .replace(/\s*\*{0,2}\s*[（(](?:導向|對應|function\s*:|facet\s*:|pole\s*:|Pole\s*:|Tag\s*:)[\s\S]*$/i, "")
+    .replace(/\*\*/g, "")
+    .replace(/`([^`]+)`/g, "$1")
+    .trim();
+}
+
+function extractVisibleTitle(text) {
+  const match = String(text || "").match(/\*\*題目(?:：\*\*|\*\*[：:])\s*([^\n]*)/);
+  if (!match) return "";
+  if (match[1].trim()) return cleanVisibleText(match[1]);
+  const after = String(text || "").slice((match.index || 0) + match[0].length).match(/^\s*\n?\s*([^\n]+)/);
+  return cleanVisibleText(after?.[1]);
+}
+
+function parseInlineMeta(line) {
+  const meta = {};
+  String(line || "").replace(/`/g, "").split("|").forEach((part) => {
+    const separator = part.indexOf(":");
+    if (separator < 0) return;
+    const key = part.slice(0, separator).replace("[後端整合資料]", "").trim();
+    const value = part.slice(separator + 1).trim();
+    if (key) meta[key] = value;
   });
+  return meta;
+}
+
+function parseChoiceLines(text) {
+  return String(text || "").split("\n").map((line) => {
+    const match = line.match(/^\s*(?:\*\s+)?\*\*選項\s+([AB])\*\*[：:]\s*(.*)$/) || line.match(/^\s*(?:\*\s+)?\*\*([A-D](?:[12])?)\.\*\*\s*(.*)$/) || line.match(/^\s*(?:\*\s+)?\*\*([A-D](?:[12])?)\*\*[：:]\s*(.*)$/);
+    return match ? { key: match[1], raw: match[2], label: cleanVisibleText(match[2]) } : null;
+  }).filter(Boolean);
+}
+
+function functionTokens(text) {
+  return [...String(text || "").matchAll(/\b(Ne|Ni|Se|Si|Te|Ti|Fe|Fi)\b/g)].map((match) => match[1]);
+}
+
+function poleFromFunction(token) {
+  return ({ Ne: "N", Ni: "N", Se: "S", Si: "S", Te: "T", Ti: "T", Fe: "F", Fi: "F" }[token] || null);
+}
+
+function poleFromPath(path, axis) {
+  const direct = String(path || "").match(/\b([EIFSTJPN])\b/);
+  if (direct) return direct[1];
+  const poles = [...new Set(functionTokens(path).map(poleFromFunction).filter(Boolean))];
+  return poles.length === 1 ? poles[0] : null;
+}
+
+function parseQuestionBankDca2(markdown) {
+  const markerMatches = [...String(markdown || "").matchAll(/^\s*`?\[後端整合資料\]\s*item_id:\s*([^\s|`]+)[^\n]*`?\s*$/gm)];
+  const records = markerMatches.map((match, index) => ({
+    item_id: match[1],
+    meta: parseInlineMeta(match[0]),
+    start: match.index,
+    end: match.index + match[0].length,
+    section: markdown.slice(index > 0 ? (markerMatches[index - 1].index + markerMatches[index - 1][0].length) : 0, match.index)
+  }));
   const behaviorItems = [];
   const forcedItems = [];
   const scenarioItems = [];
   const costItems = [];
   const probes = [];
-  records.forEach(({ meta, section }) => {
-    const base = {
-      item_id: meta.item_id,
-      module: meta.module,
-      axis: meta.axis || poleMeta[meta.pole]?.axis || null,
-      primary_pole: meta.pole || meta.pole_B || null,
-      facet: meta.facet || null,
-      context: contextBucket(meta),
-      context_type: meta.context_type || meta.context || meta.cost_type || meta.probe_type || null,
-      direction: 1,
-      mirror_group: null,
-      scoring_key: meta.scoring_key || null,
-      active: true,
-      raw_metadata: meta
-    };
+  const behaviorOptions = [
+    { key: "NA", label: "沒有遇過 / 不適用", value: null },
+    { key: "1", label: "幾乎沒有", value: 0 },
+    { key: "2", label: "少數情況", value: 1 },
+    { key: "3", label: "約一半", value: 2 },
+    { key: "4", label: "多數情況", value: 3 },
+    { key: "5", label: "幾乎每次", value: 4 }
+  ];
+  const baseFor = (meta, itemId) => ({
+    item_id: itemId,
+    module: meta.module || (itemId.startsWith("Probe_") ? "PROBE" : null),
+    axis: meta.axis || poleMeta[meta.pole]?.axis || poleMeta[meta.pole_cost]?.axis || (itemId.match(/^[A-Z]+_([A-Z]{2})_/) || [])[1] || null,
+    primary_pole: meta.pole || meta.pole_B || meta.pole_cost || null,
+    facet: meta.facet || null,
+    context: contextBucket(meta),
+    context_type: meta.context || meta.context_check || null,
+    direction: 1,
+    mirror_group: meta.facet || null,
+    scoring_key: meta.scoring || null,
+    active: true,
+    raw_metadata: meta,
+    source: "題庫2.txt"
+  });
+  records.forEach((record) => {
+    const { meta, item_id: itemId, section } = record;
+    const base = baseFor(meta, itemId);
     if (meta.module === "A") {
-      const stem = section.match(/\*\*題目\*\*：([^\n]+)/)?.[1]?.trim() || "";
-      behaviorItems.push({ ...base, format: "behavior", direction: 1, stem, anchor: "請根據最近真實經驗作答；[NA] 不計入分母與平均。", options: [
-        { key: "NA", label: "不適用 / 無相關經驗", value: null },
-        { key: "0", label: "幾乎沒有", value: 0 },
-        { key: "1", label: "少數情況", value: 1 },
-        { key: "2", label: "約一半情況", value: 2 },
-        { key: "3", label: "多數情況", value: 3 },
-        { key: "4", label: "幾乎每次", value: 4 }
+      behaviorItems.push({ ...base, format: "behavior", stem: extractVisibleTitle(section), anchor: "請根據最近真實行為作答；沒有遇過／不適用不計入分母。", options: behaviorOptions });
+    } else if (meta.module === "B") {
+      const choices = parseChoiceLines(section).filter((choice) => choice.key === "A" || choice.key === "B");
+      forcedItems.push({ ...base, format: "forced_choice", axis: meta.axis, primary_pole: meta.option_B, pole_A: meta.option_A, pole_B: meta.option_B, stem: extractVisibleTitle(section), optionA: choices[0]?.label || "", optionB: choices[1]?.label || "", anchor: "兩種方法都有優點，請以自然的取捨優先順序作答。", options: [
+        { key: "A", label: "強烈 A", value: -2 },
+        { key: "B", label: "稍微 A", value: -1 },
+        { key: "C", label: "無明顯偏向", value: 0 },
+        { key: "D", label: "稍微 B", value: 1 },
+        { key: "E", label: "強烈 B", value: 2 }
       ] });
-      return;
-    }
-    if (meta.module === "B") {
-      const stem = section.match(/\*\*情境\*\*：([^\n]+)/)?.[1]?.trim() || "";
-      const options = [...section.matchAll(/^\*\s+\*\*選項\s+([AB])\*\*：([^\n]+)/gm)].map((match) => ({ key: match[1], label: stripItemTag(match[2]), value: match[1] === "A" ? -2 : 2 }));
-      const axis = meta.axis;
-      const direction = axisMeta[axis]?.positive === meta.pole_B ? 1 : -1;
-      forcedItems.push({ ...base, format: "forced_choice", primary_pole: meta.pole_B, pole_A: meta.pole_A, pole_B: meta.pole_B, direction, stem, optionA: options[0]?.label || "", optionB: options[1]?.label || "", anchor: "兩種方法都有優點，請以自然的取捨優先順序作答。", options: [
-        { key: "A", label: "強烈偏向 A", value: -2 },
-        { key: "B", label: "稍微偏向 A", value: -1 },
-        { key: "C", label: "無明顯偏向 / 兩者平衡", value: 0 },
-        { key: "D", label: "稍微偏向 B", value: 1 },
-        { key: "E", label: "強烈偏向 B", value: 2 }
+    } else if (meta.module === "D") {
+      costItems.push({ ...base, format: "cost", axis: poleMeta[meta.pole_cost]?.axis, primary_pole: meta.pole_cost, stem: extractVisibleTitle(section), anchor: "這題測量的是認知成本；分數越高，代表越容易感到這個心理歷程耗能。", options: [
+        { key: "1", label: "幾乎沒有", value: 1 },
+        { key: "2", label: "少數情況", value: 2 },
+        { key: "3", label: "約一半", value: 3 },
+        { key: "4", label: "多數情況", value: 4 },
+        { key: "5", label: "幾乎每次", value: 5 }
       ] });
-      return;
+    } else if (meta.module === "PROBE" || itemId.startsWith("Probe_")) {
+      const choices = parseChoiceLines(section).filter((choice) => choice.key === "A" || choice.key === "B");
+      probes.push({ ...base, module: "PROBE", format: "probe", axis: poleMeta[meta.option_A]?.axis, primary_pole: meta.option_B, stem: extractVisibleTitle(section), anchor: "這是用來釐清情境依賴的確認題，不會單獨改寫整體結果。", options: choices.map((choice) => ({ key: choice.key, label: choice.label, pole: choice.key === "A" ? meta.option_A : meta.option_B })) });
     }
-    if (meta.module === "C") {
-      const stem = section.match(/\*\*情境主幹\*\*：([^\n]+)/)?.[1]?.trim() || "";
-      const stepOneText = section.split(/#####\s*Step 1：[^\n]*\n/)[1]?.split(/#####\s*Step 2：/)[0] || "";
-      const stepTwoText = section.split(/#####\s*Step 2：[^\n]*\n/)[1] || "";
-      const step1Options = [...stepOneText.matchAll(/^\*\s+\*\*([A-D])\*\*：([^\n]+)/gm)].map((match) => ({ key: match[1], label: stripItemTag(match[2]), function_tag: (match[2].match(/`function:\s*([^`]+)`/) || [])[1] || null }));
-      const step2Options = [...stepTwoText.matchAll(/^\*\s+\*\*([A-D])\*\*：([^\n]+)/gm)].map((match) => {
-        const facetMatch = match[2].match(/`facet:\s*([^`,]+)[^`]*`/);
-        const poleMatch = match[2].match(/`(?:facet:[^`]+,\s*)?pole:\s*([EIFSTJPN])`/);
-        return { key: match[1], label: stripItemTag(match[2]), facet: facetMatch?.[1]?.trim() || null, pole: poleMatch?.[1] || null };
-      });
-      const axis = meta.axis;
-      scenarioItems.push({ ...base, format: "micro_sim", primary_pole: axisMeta[axis]?.positive || meta.axis, direction: 1, stem, step1Options, step2Options, anchor: "先選第一個行動，再選最主要原因；兩個步驟都會納入測量。", options: [] });
-      return;
-    }
-    if (meta.module === "D") {
-      const stem = section.match(/\*\*題目\*\*：([^\n]+)/)?.[1]?.trim() || "";
-      const axis = poleMeta[meta.pole]?.axis;
-      costItems.push({ ...base, axis, format: "cost", primary_pole: meta.pole, direction: 1, stem, anchor: "得分越高，代表這個心理歷程對你而言認知成本越低。", options: [
-        { key: "1", label: "非常不符合", value: 1 },
-        { key: "2", label: "大致不符合", value: 2 },
-        { key: "3", label: "普通 / 視情況而定", value: 3 },
-        { key: "4", label: "大致符合", value: 4 },
-        { key: "5", label: "非常符合", value: 5 }
-      ] });
-      return;
-    }
-    if (meta.module === "PROBE") {
-      const stem = section.match(/\*\*題目\*\*：([^\n]+)/)?.[1]?.trim() || "";
-      const options = [...section.matchAll(/^\*\s+`\[([A-D])\]`\s+([^\n]+)/gm)].map((match) => {
-        const tagText = match[2];
-        const poleMatch = tagText.match(/`Pole:\s*([EIFSTJPN])/);
-        return { key: match[1], label: stripItemTag(tagText), pole: poleMatch?.[1] || null };
-      });
-      probes.push({ ...base, format: "probe", stem, anchor: "這是用來釐清情境依賴的確認題，不會單獨改寫你的整體結果。", options });
-    }
+  });
+
+  const cRecords = records.filter((record) => record.meta.module === "C");
+  const roots = [...new Set(cRecords.map((record) => record.item_id.replace(/_S[12]$/, "")))];
+  roots.forEach((root) => {
+    const s1 = cRecords.find((record) => record.item_id === `${root}_S1`);
+    const s2 = cRecords.find((record) => record.item_id === `${root}_S2`);
+    if (!s1 || !s2) return;
+    const rootStart = markdown.lastIndexOf("**【", s1.start);
+    const block = markdown.slice(rootStart >= 0 ? rootStart : s1.start, s2.end);
+    const step1Header = block.search(/\*\*Step 1[^\n]*?(?:\*\*[：:]|[：:]\*\*)/);
+    const step2Header = block.search(/\*\*Step 2[^\n]*?(?:\*\*[：:]|[：:]\*\*)/);
+    const step1End = step1Header >= 0 ? block.indexOf("\n", step1Header) + 1 : 0;
+    const step2End = step2Header >= 0 ? block.indexOf("\n", step2Header) + 1 : block.length;
+    const step1Text = block.slice(step1End, step2Header >= 0 ? step2Header : block.length);
+    const step2Text = block.slice(step2End);
+    const contextText = (block.match(/^\*\*Context:\s*([^\n]+)/m) || [])[1] || (block.match(/^\*\*【([^\n]+)】\*\*/m) || [])[1] || "free";
+    const meta = { ...s1.meta, axis: (root.match(/^C_([A-Z]{2})_/) || [])[1], context: contextText.replace(/\*+$/, "").trim() };
+    const axis = meta.axis;
+    const step1Question = block.match(/^\*\*Step 1[^：:]*[：:]\*\*\s*([^\n]+)/m)?.[1] || "";
+    const step1Choices = parseChoiceLines(step1Text).map((choice) => {
+      const path = meta[`${choice.key}_path`] || choice.raw;
+      return { key: choice.key, label: choice.label, path, pole: poleFromPath(path, axis), function_tags: functionTokens(path), function_tag: functionTokens(path)[0] || null };
+    });
+    const step2Choices = parseChoiceLines(step2Text).map((choice) => {
+      const functions = functionTokens(choice.raw);
+      const facet = choice.raw.match(/facet\s*:\s*([^`,)]+)/i)?.[1]?.trim() || null;
+      return { key: choice.key, label: choice.label, function_tags: functions, function_tag: functions[0] || null, pole: poleFromFunction(functions[0]), facet };
+    });
+    scenarioItems.push({ ...baseFor(meta, root), item_id: root, module: "C", format: "micro_sim", axis, primary_pole: axisMeta[axis]?.positive, context: contextBucket(meta), context_type: meta.context, stem: cleanVisibleText(step1Question), anchor: "先選第一個行動，再選最主要原因；兩個步驟都會納入測量。", step1Options: step1Choices, step2Options: step2Choices, options: [] });
   });
   return { behaviorItems, forcedItems, scenarioItems, costItems, probes, coreItems: [...behaviorItems, ...forcedItems, ...scenarioItems, ...costItems], allItems: [...behaviorItems, ...forcedItems, ...scenarioItems, ...costItems, ...probes] };
 }
 
 async function hydrateQuestionBank() {
   try {
-    const response = await fetch("題庫.txt", { cache: "no-store" });
+    const response = await fetch(QUESTION_BANK_FILE, { cache: "no-store" });
     if (!response.ok) throw new Error(`題庫載入失敗：${response.status}`);
-    const parsed = parseQuestionBank(await response.text());
+    const parsed = parseQuestionBankDca2(await response.text());
     if (parsed.behaviorItems.length !== 48 || parsed.forcedItems.length !== 12 || parsed.scenarioItems.length !== 12 || parsed.costItems.length !== 8 || parsed.probes.length !== 8) throw new Error("題庫數量不完整");
     ITEM_BANK = parsed;
-    if (!state.itemOrder.length || state.questionBankVersion !== QUESTION_BANK_VERSION) {
+    const parsedById = new Map(parsed.allItems.map((item) => [item.item_id, item]));
+    const savedIds = state.itemOrder.map((item) => item.item_id);
+    const canRemapSavedOrder = savedIds.length >= 80 && savedIds.every((itemId) => parsedById.has(itemId));
+    if (canRemapSavedOrder && state.questionBankVersion === QUESTION_BANK_VERSION) {
+      state.itemOrder = savedIds.map((itemId) => parsedById.get(itemId));
+      if (state.result) state.result = scoreAll(state.itemOrder, state.responses);
+    } else {
       state.itemOrder = [];
       state.currentIndex = 0;
       state.responses = {};
@@ -309,6 +372,7 @@ async function hydrateQuestionBank() {
       state.probeMode = false;
     }
     state.questionBankVersion = QUESTION_BANK_VERSION;
+    questionBankReady = true;
     render();
   } catch (error) {
     console.warn(error);
@@ -369,7 +433,14 @@ const fmt = (value) => `${value >= 0 ? "+" : ""}${value.toFixed(2)}`;
 const responseValue = (response) => {
   if (!response) return null;
   const raw = Object.prototype.hasOwnProperty.call(response, "value") ? response.value : response.answer;
-  return raw === null || raw === undefined ? null : Number(raw);
+  if (raw === null || raw === undefined || raw === "") return null;
+  const value = typeof raw === "number" ? raw : Number(raw);
+  return Number.isFinite(value) ? value : null;
+};
+const responseKey = (response) => {
+  if (!response) return null;
+  const raw = Object.prototype.hasOwnProperty.call(response, "value") ? response.value : response.answer;
+  return raw === null || raw === undefined ? null : String(raw);
 };
 const isCompleteResponse = (item, response) => Boolean(response) && (item?.format !== "micro_sim" || (response.step1 && response.step2));
 
@@ -409,6 +480,7 @@ function resetState() {
 }
 
 function startTest(resume = false) {
+  if (!questionBankReady) return;
   if (!resume || !state.itemOrder.length) {
     state.sessionId = `session-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     state.itemOrder = buildInitialOrder();
@@ -426,6 +498,7 @@ function startTest(resume = false) {
 }
 
 function fillDemo() {
+  if (!questionBankReady) return;
   state.itemOrder = buildInitialOrder();
   state.startedAt = Date.now() - 1000 * 60 * 18;
   state.responses = {};
@@ -462,7 +535,7 @@ function answerCurrent(value, step = null) {
   const previous = state.responses[item.item_id] || { user_id: state.sessionId, item_id: item.item_id, responseTime: 0, timestamp: Date.now(), scoring_version: SCORING_VERSION };
   if (item.format === "micro_sim") {
     const key = step === 1 ? "step1" : "step2";
-    state.responses[item.item_id] = { ...previous, [key]: value, responseTime: responseTime || previous.responseTime, timestamp: Date.now() };
+    state.responses[item.item_id] = { ...previous, [key]: value, ...(step === 1 ? { step2: null } : {}), responseTime: responseTime || previous.responseTime, timestamp: Date.now() };
   } else {
     state.responses[item.item_id] = { ...previous, answer: value, value, responseTime, timestamp: Date.now() };
   }
@@ -516,31 +589,36 @@ function finishCoreOrResult() {
 function scoreAll(items, responses) {
   const facetScores = {};
   facetMeta.forEach((facet) => {
-    const values = items.filter((item) => item.active && item.format === "behavior" && item.facet === facet.code && responses[item.item_id] && responseValue(responses[item.item_id]) !== null).map((item) => responseValue(responses[item.item_id]));
+    const values = items.filter((item) => item.active && item.format === "behavior" && item.facet === facet.code && responseValue(responses[item.item_id]) !== null).map((item) => responseValue(responses[item.item_id]));
     facetScores[facet.code] = values.length ? Math.round(clamp((avg(values) / 4) * 100, 0, 100)) : 50;
+  });
+  const costScores = {};
+  const costRecovery = {};
+  Object.keys(poleMeta).forEach((pole) => {
+    const values = items.filter((item) => item.active && item.format === "cost" && item.primary_pole === pole && responseValue(responses[item.item_id]) !== null).map((item) => responseValue(responses[item.item_id]));
+    costScores[pole] = values.length ? Math.round(clamp(((avg(values) - 1) / 4) * 100, 0, 100)) : null;
+    const recoveryItem = items.find((item) => item.active && item.format === "cost" && item.primary_pole === pole);
+    costRecovery[pole] = recoveryItem?.raw_metadata?.pole_recovery || null;
   });
   const poleScores = {};
   Object.keys(poleMeta).forEach((pole) => {
     const facets = facetMeta.filter((facet) => facet.pole === pole).map((facet) => facetScores[facet.code]);
-    const costItems = items.filter((item) => item.active && item.format === "cost" && item.primary_pole === pole && responses[item.item_id]);
-    const costScore = costItems.length ? avg(costItems.map((item) => responseValue(responses[item.item_id]) * 20)) : null;
-    const facetScore = avg(facets);
-    poleScores[pole] = Math.round(costScore === null ? facetScore : facetScore * 0.85 + costScore * 0.15);
+    poleScores[pole] = Math.round(avg(facets));
   });
   const channels = {};
   Object.keys(axisMeta).forEach((axis) => {
-    const fc = items.filter((item) => item.active && item.axis === axis && item.format === "forced_choice" && responses[item.item_id]).map((item) => responseValue(responses[item.item_id]) * item.direction / 2);
+    const fc = items.filter((item) => item.active && item.axis === axis && item.format === "forced_choice" && responseValue(responses[item.item_id]) !== null).map((item) => responseValue(responses[item.item_id]) * item.direction / 2);
     const scenarioItems = items.filter((item) => item.active && item.axis === axis && item.format === "micro_sim" && isCompleteResponse(item, responses[item.item_id]));
     const sc = scenarioItems.map((item) => microScenarioScore(item, responses[item.item_id]));
-    const probeItems = items.filter((item) => item.active && item.axis === axis && item.format === "probe" && responses[item.item_id]);
+    const probeItems = items.filter((item) => item.active && item.axis === axis && item.format === "probe" && responseKey(responses[item.item_id]));
     const probe = probeItems.map((item) => probeScore(item, responses[item.item_id]));
-    channels[axis] = { relative: (poleScores[axisMeta[axis].positive] - poleScores[axisMeta[axis].negative]) / 100, forced: avg(fc), scenario: avg(sc), probe: avg(probe), scenarioWithProbe: avg(sc) };
+    channels[axis] = { relative: (poleScores[axisMeta[axis].positive] - poleScores[axisMeta[axis].negative]) / 100, forced: avg(fc), scenario: avg(sc), probe: avg(probe), probeCount: probeItems.length };
   });
   const axes = {};
   Object.keys(axisMeta).forEach((axis) => {
     const channel = channels[axis];
-    const scenarioChannel = channel.probe ? (channel.scenario * 0.7 + channel.probe * 0.3) : channel.scenario;
-    axes[axis] = clamp(0.5 * channel.relative + 0.3 * channel.forced + 0.2 * scenarioChannel, -1, 1);
+    const coreAxis = 0.5 * channel.relative + 0.3 * channel.forced + 0.2 * channel.scenario;
+    axes[axis] = clamp(channel.probeCount ? coreAxis * 0.75 + channel.probe * 0.25 : coreAxis, -1, 1);
   });
   const profiles = {};
   const architecture = {};
@@ -559,32 +637,35 @@ function scoreAll(items, responses) {
     scenarioContext[axis] = {};
     ["free", "responsibility", "pressure", "uncertainty"].forEach((context) => {
       const values = items.filter((item) => item.active && item.axis === axis && item.format === "micro_sim" && item.context === context && isCompleteResponse(item, responses[item.item_id])).map((item) => microScenarioScore(item, responses[item.item_id]));
-      scenarioContext[axis][context] = values.length ? avg(values) : 0;
+      scenarioContext[axis][context] = values.length ? avg(values) : null;
     });
   });
   const contextSensitivity = {};
   Object.keys(axisMeta).forEach((axis) => {
-    const values = Object.values(scenarioContext[axis]);
-    contextSensitivity[axis] = Math.round((Math.max(...values) - Math.min(...values)) * 50);
+    const values = Object.values(scenarioContext[axis]).filter((value) => value !== null);
+    contextSensitivity[axis] = values.length > 1 ? Math.round((Math.max(...values) - Math.min(...values)) * 50) : 0;
   });
   const dynamicAxes = Object.keys(axisMeta).filter((axis) => {
     const channel = channels[axis];
     const signs = [Math.sign(channel.relative), Math.sign(channel.forced), Math.sign(channel.scenario)].filter((value) => value !== 0);
     const disagreement = signs.length >= 2 && new Set(signs).size > 1;
-    const contextShift = Math.max(...Object.values(scenarioContext[axis])) - Math.min(...Object.values(scenarioContext[axis])) > 0.4;
+    const contextValues = Object.values(scenarioContext[axis]).filter((value) => value !== null);
+    const contextShift = contextValues.length > 1 && Math.max(...contextValues) - Math.min(...contextValues) > 0.4;
     return Math.abs(axes[axis]) < 0.15 || disagreement || contextShift;
   });
   const quality = responseQuality(items, responses);
   const confidence = dynamicAxes.length >= 3 || quality.consistency < 55 ? "Low" : dynamicAxes.length || quality.consistency < 78 ? "Medium" : "High";
   const precisionType = Object.keys(axisMeta).map((axis) => axes[axis] > 0.15 ? axisMeta[axis].positive : axes[axis] < -0.15 ? axisMeta[axis].negative : "X").join("");
-  const bestFit = Object.keys(axisMeta).map((axis) => axes[axis] >= 0 ? axisMeta[axis].positive : axisMeta[axis].negative).join("");
-  return { facetScores, poleScores, channels, axes, profiles, architecture, scenarioContext, contextSensitivity, dynamicAxes, quality, confidence, precisionType, bestFit, scoringVersion: SCORING_VERSION, cognitiveFunctions: cognitiveFunctionScores(items, responses), cognitiveFacets: cognitiveFacetScores(items, responses) };
+  const bestFit = Object.keys(axisMeta).map((axis) => axes[axis] > 0 ? axisMeta[axis].positive : axisMeta[axis].negative).join("");
+  return { facetScores, poleScores, costScores, costRecovery, channels, axes, profiles, architecture, scenarioContext, contextSensitivity, dynamicAxes, quality, confidence, precisionType, bestFit, scoringVersion: SCORING_VERSION, cognitiveFunctions: cognitiveFunctionScores(items, responses), cognitiveFacets: cognitiveFacetScores(items, responses) };
 }
 
 function microScenarioScore(item, response) {
-  const selected = item.step2Options?.find((option) => option.key === response?.step2);
-  if (!selected?.pole) return 0;
-  return selected.pole === axisMeta[item.axis]?.positive ? 1 : selected.pole === axisMeta[item.axis]?.negative ? -1 : 0;
+  const meta = axisMeta[item.axis];
+  const poleScore = (pole) => pole === meta?.positive ? 1 : pole === meta?.negative ? -1 : 0;
+  const first = item.step1Options?.find((option) => option.key === response?.step1);
+  const second = item.step2Options?.find((option) => option.key === response?.step2);
+  return clamp((2 * poleScore(first?.pole) + poleScore(second?.pole)) / 3, -1, 1);
 }
 
 function probeScore(item, response) {
@@ -596,8 +677,12 @@ function probeScore(item, response) {
 function cognitiveFunctionScores(items, responses) {
   const points = {};
   items.filter((item) => item.format === "micro_sim" && isCompleteResponse(item, responses[item.item_id])).forEach((item) => {
-    const selected = item.step1Options.find((option) => option.key === responses[item.item_id].step1);
-    if (selected?.function_tag) points[selected.function_tag] = (points[selected.function_tag] || 0) + 2;
+    const response = responses[item.item_id];
+    const first = item.step1Options.find((option) => option.key === response.step1);
+    const firstTags = first?.function_tags || [];
+    if (firstTags.length) firstTags.forEach((tag) => { points[tag] = (points[tag] || 0) + 2 / firstTags.length; });
+    const second = item.step2Options.find((option) => option.key === response.step2);
+    if (second?.function_tag) points[second.function_tag] = (points[second.function_tag] || 0) + 1;
   });
   return points;
 }
@@ -612,13 +697,14 @@ function cognitiveFacetScores(items, responses) {
 }
 
 function responseQuality(items, responses) {
-  const completed = items.filter((item) => item.active && responses[item.item_id]);
+  const completed = items.filter((item) => item.active && isCompleteResponse(item, responses[item.item_id]));
   const repeatCounts = {};
-  completed.forEach((item) => { const key = responseValue(responses[item.item_id]); repeatCounts[key] = (repeatCounts[key] || 0) + 1; });
-  const maxRepeat = completed.length ? Math.max(...Object.values(repeatCounts)) : 0;
+  completed.filter((item) => item.format !== "micro_sim").forEach((item) => { const key = responseKey(responses[item.item_id]); if (key !== null) repeatCounts[key] = (repeatCounts[key] || 0) + 1; });
+  const repeatValues = Object.values(repeatCounts);
+  const maxRepeat = repeatValues.length ? Math.max(...repeatValues) : 0;
   const attention = completed.length ? Math.round(clamp(100 - Math.max(0, maxRepeat / completed.length * 100 - 28) * 1.2, 45, 100)) : 0;
   const mirrors = {};
-  items.filter((item) => item.active && item.mirror_group && responses[item.item_id]).forEach((item) => { (mirrors[item.mirror_group] ||= []).push(responseValue(responses[item.item_id]) * item.direction); });
+  items.filter((item) => item.active && item.format === "behavior" && item.mirror_group && responseValue(responses[item.item_id]) !== null).forEach((item) => { (mirrors[item.mirror_group] ||= []).push(responseValue(responses[item.item_id]) * item.direction); });
   const mirrorValues = Object.values(mirrors).filter((pair) => pair.length === 2).map((pair) => 100 - Math.abs(pair[0] - pair[1]) * 25);
   const consistency = Math.round(avg(mirrorValues.length ? mirrorValues : [attention]));
   const averageResponse = avg(completed.map((item) => responses[item.item_id].responseTime || 0));
@@ -634,24 +720,30 @@ function axisLabel(value, axis) {
   return value > 0.15 ? meta.positive : value < -0.15 ? meta.negative : "X";
 }
 function contextLabel(value, axis) {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) return "—";
   const meta = axisMeta[axis];
   if (Math.abs(value) < 0.12) return `${meta.positive}/${meta.negative}`;
   return value > 0 ? meta.positive : meta.negative;
+}
+function contextClass(value) {
+  if (value === null || value === undefined || Number.isNaN(Number(value)) || Math.abs(value) < 0.12) return "";
+  return value > 0 ? "accent" : "coral";
 }
 function contextZh(context) { return ({ free: "自由探索", responsibility: "責任環境", pressure: "時間壓力", uncertainty: "高度不確定" }[context] || context); }
 function scoreText(value) { return `${value}/100`; }
 
 function renderOptionButtons(options, selected, step = null) {
   return (options || []).map((option) => {
-    const keyMode = step !== null || option.pole !== undefined;
+    const keyMode = step !== null || option.pole !== undefined || option.value === null || typeof option.value === "string";
     const optionValue = keyMode ? option.key : option.value;
-    const isSelected = selected === optionValue;
+    const isSelected = keyMode ? String(selected ?? "") === String(option.key) : selected === optionValue;
     return `<button class="option-btn ${isSelected ? "is-selected" : ""}" data-value="${escapeHtml(optionValue)}" data-mode="${keyMode ? "key" : "number"}" ${step !== null ? `data-step="${step}"` : ""}><span class="option-label">${escapeHtml(option.label)}</span><span class="option-key">${escapeHtml(option.key)}</span></button>`;
   }).join("");
 }
 
 function renderIntro() {
   const hasProgress = !state.result && state.itemOrder.length && Object.keys(state.responses).length && state.view !== "result";
+  const readyLabel = questionBankReady ? (hasProgress ? "繼續測驗" : "開始 80 題測量") : "載入題庫中...";
   app.innerHTML = `<section class="view intro-view">
     <div class="intro-grid">
       <div>
@@ -659,7 +751,7 @@ function renderIntro() {
         <h1 class="intro-title">Read the <em>architecture</em><br />behind your type.</h1>
         <p class="intro-lede">這不是把你塞進四個二分字母的快問快答。系統先從 24 個人格機制觀察你的實際行為，再比較取捨與情境，最後才給出一個可保留不確定性的結果。</p>
         <div class="intro-actions">
-          <button class="btn-primary" id="startButton">${hasProgress ? "繼續測驗" : "開始 80 題測量"} <span aria-hidden="true">→</span></button>
+          <button class="btn-primary" id="startButton" ${questionBankReady ? "" : "disabled"}>${readyLabel} <span aria-hidden="true">→</span></button>
           ${hasProgress ? `<button class="btn-secondary" id="restartButton">重新開始</button>` : ""}
           <button class="btn-quiet" id="demoButton">查看示範報告</button>
         </div>
@@ -679,7 +771,7 @@ function renderIntro() {
       <div class="intro-stat"><b>80</b><span>核心題目</span></div>
       <div class="intro-stat"><b>+8</b><span>最多動態確認題</span></div>
       <div class="intro-stat"><b>08</b><span>獨立 pole strength</span></div>
-      <div class="intro-stat"><b>v1.0</b><span>可重新計算的 scoring</span></div>
+      <div class="intro-stat"><b>v1.1</b><span>可重新計算的 scoring</span></div>
     </div>
   </section>`;
   document.getElementById("startButton").addEventListener("click", () => startTest(Boolean(hasProgress)));
@@ -694,10 +786,11 @@ function renderQuiz() {
   const answered = state.itemOrder.filter((entry) => isCompleteResponse(entry, state.responses[entry.item_id])).length;
   const total = state.itemOrder.length;
   const format = formatName(item.format);
-  const selectedValue = response?.value ?? response?.answer;
+  const selectedValue = response && response.value === null ? "NA" : response?.value ?? response?.answer;
   const options = renderOptionButtons(item.options, selectedValue);
   const optionIntro = item.format === "forced_choice" ? `<span class="choice-a">A</span> ${escapeHtml(item.optionA)}<br /><span class="choice-b">B</span> ${escapeHtml(item.optionB)}` : "";
-  const optionBlock = item.format === "micro_sim" ? `<div class="sim-step"><div class="sim-step-label"><b>Step 1</b><span>First Action · 第一個行動</span></div><div class="options" role="group" aria-label="Step 1 選項">${renderOptionButtons(item.step1Options, response?.step1, 1)}</div></div><div class="sim-step"><div class="sim-step-label"><b>Step 2</b><span>Primary Rationale · 最主要原因</span></div><div class="options" role="group" aria-label="Step 2 選項">${renderOptionButtons(item.step2Options, response?.step2, 2)}</div></div>` : `<div class="options" role="group" aria-label="回答選項">${options}</div>`;
+  const step2Options = item.format === "micro_sim" && response?.step1 && item.step2Options.some((option) => option.key.startsWith(`${response.step1}`)) ? item.step2Options.filter((option) => option.key.startsWith(`${response.step1}`)) : item.step2Options;
+  const optionBlock = item.format === "micro_sim" ? `<div class="sim-step"><div class="sim-step-label"><b>Step 1</b><span>First Action · 第一個行動</span></div><div class="options" role="group" aria-label="Step 1 選項">${renderOptionButtons(item.step1Options, response?.step1, 1)}</div></div><div class="sim-step ${response?.step1 ? "" : "is-muted"}"><div class="sim-step-label"><b>Step 2</b><span>Primary Rationale · 最主要原因</span></div><div class="options" role="group" aria-label="Step 2 選項">${renderOptionButtons(step2Options, response?.step2, 2)}</div></div>` : `<div class="options" role="group" aria-label="回答選項">${options}</div>`;
   app.innerHTML = `<section class="view quiz-view">
     ${state.probeMode && state.currentIndex === state.itemOrder.length - ITEM_BANK.probes.filter((probe) => state.itemOrder.some((i) => i.item_id === probe.item_id)).length ? `<div class="welcome-banner"><span class="banner-mark">NEW</span><div><strong>加入少量確認題</strong><p>你的初步證據在部分軸向接近邊界或呈現不同情境反應，接下來最多 8 題只用來釐清這些差異。</p></div></div>` : ""}
     <div class="quiz-head"><div><h1>Core measurement</h1><p>${state.probeMode ? "Dynamic confirmation · 情境差異釐清" : "Behavioral + trade-off + context evidence"}</p></div><div class="quiz-count">${String(state.currentIndex + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}</div></div>
@@ -720,7 +813,7 @@ function renderQuiz() {
   </section>`;
   app.querySelectorAll(".option-btn").forEach((button) => button.addEventListener("click", () => {
     const raw = button.dataset.value;
-    const value = button.dataset.mode === "key" ? raw : raw === "NA" ? null : Number(raw);
+    const value = raw === "NA" ? null : button.dataset.mode === "key" ? raw : Number(raw);
     answerCurrent(value, button.dataset.step ? Number(button.dataset.step) : null);
   }));
   document.getElementById("nextButton").addEventListener("click", moveNext);
@@ -744,9 +837,10 @@ function renderResults() {
       <div class="confidence-box"><div><div class="confidence-label">Measurement confidence</div><div class="confidence-value">${escapeHtml(result.confidence)}</div></div><p>${escapeHtml(confidenceCopy)}<br />這不是準確率，也不代表人格優劣。</p></div>
     </div>
     <section class="result-section"><div class="section-heading"><h2>Architecture layer · 8 poles</h2><p>八個分數彼此獨立，不假設對立兩端相加等於 100。</p></div><div class="poles-grid">${renderPoleCards(result)}</div></section>
+    <section class="result-section"><div class="section-heading"><h2>Cognitive cost layer · 8 channels</h2><p>成本分數獨立呈現：越高代表越容易在該通道感到耗能，不會扣除你的能力或偏好分數。</p></div><div class="poles-grid cost-grid">${renderCostCards(result)}</div></section>
     <section class="result-section"><div class="section-heading"><h2>Facet layer · 24 mechanisms</h2><p>展開每一條軸，查看形成 pole strength 的底層機制。</p></div>${renderFacetGroups(result)}</section>
     <section class="result-section"><div class="section-heading"><h2>Axis architecture</h2><p>Relative preference、integration、polarization 與 activity 同時保留。</p></div><div class="architecture-grid">${renderArchitecture(result)}</div></section>
-    <section class="result-section"><div class="section-heading"><h2>Context map</h2><p>同一條軸在不同約束下可能採取不同表現。</p></div><div class="context-wrap"><table class="context-table"><thead><tr><th>Environment</th><th>EI</th><th>SN</th><th>TF</th><th>JP</th></tr></thead><tbody>${["free", "responsibility", "pressure", "uncertainty"].map((context) => `<tr><td>${contextZh(context)}</td>${Object.keys(axisMeta).map((axis) => `<td><span class="context-badge ${Math.abs(result.scenarioContext[axis][context]) < .12 ? "" : result.scenarioContext[axis][context] > 0 ? "accent" : "coral"}">${contextLabel(result.scenarioContext[axis][context], axis)}</span></td>`).join("")}</tr>`).join("")}</tbody></table></div><p class="intro-note" style="margin-top:11px">Context sensitivity：${Object.entries(result.contextSensitivity).map(([axis, value]) => `${axis} ${value}`).join(" · ")}（數值越高，情境差異越明顯）</p></section>
+    <section class="result-section"><div class="section-heading"><h2>Context map</h2><p>同一條軸在不同約束下可能採取不同表現。</p></div><div class="context-wrap"><table class="context-table"><thead><tr><th>Environment</th><th>EI</th><th>SN</th><th>TF</th><th>JP</th></tr></thead><tbody>${["free", "responsibility", "pressure", "uncertainty"].map((context) => `<tr><td>${contextZh(context)}</td>${Object.keys(axisMeta).map((axis) => { const value = result.scenarioContext[axis][context]; return `<td><span class="context-badge ${contextClass(value)}">${contextLabel(value, axis)}</span></td>`; }).join("")}</tr>`).join("")}</tbody></table></div><p class="intro-note" style="margin-top:11px">Context sensitivity：${Object.entries(result.contextSensitivity).map(([axis, value]) => `${axis} ${value}`).join(" · ")}（數值越高，情境差異越明顯）</p></section>
     <section class="result-section"><div class="section-heading"><h2>Most distinctive patterns</h2><p>由你的 facet 分數生成，不套用 generic type stereotype。</p></div><div class="distinctive"><div class="trait-list">${topFacets.map((facet, index) => `<div class="trait-item"><span class="trait-index">0${index + 1}</span><div><strong>${escapeHtml(facet.zh)}</strong><p>${escapeHtml(facet.desc)} 目前分數為 ${facet.score}/100，這個模式在你的回覆中出現得相對突出。</p></div></div>`).join("")}</div><div class="method-note"><h3>How to read this report</h3><p>先看八個 pole 的高低，再看每組軸的 profile。Dual High 代表兩種模式都很強；Balanced 只是接近，不代表低活躍。你的回覆顯示的是目前測量到的模式，不是固定身份。</p><p><code>Behavior 40% · Forced choice 30% · Scenario 30%</code></p></div></div></section>
     <section class="result-section"><div class="section-heading"><h2>Response quality</h2><p>只影響 Measurement Confidence，不直接改寫人格分數。</p></div><div class="architecture-grid"><div class="architecture-card"><h3>Consistency</h3><div class="arch-score"><b>${result.quality.consistency}</b> / 100</div><p class="arch-summary">相同機制的不同表述是否大致一致。</p></div><div class="architecture-card"><h3>Attention</h3><div class="arch-score"><b>${result.quality.attention}</b> / 100</div><p class="arch-summary">是否出現大量完全相同的選項。</p></div><div class="architecture-card"><h3>Response time</h3><div class="arch-score"><b>${(result.quality.averageResponse / 1000).toFixed(1)}s</b></div><p class="arch-summary">${result.quality.speedAnomaly ? "速度偏快，僅降低結果信心。" : "沒有極端快速作答訊號。"}</p></div><div class="architecture-card"><h3>Scoring record</h3><div class="arch-score"><b>${result.scoringVersion}</b></div><p class="arch-summary">每一題回答與時間戳都保留，可在未來重新計算。</p></div></div></section>
   </section>`;
@@ -756,6 +850,14 @@ function renderResults() {
 
 function renderPoleCards(result) {
   return Object.keys(poleMeta).map((pole) => `<div class="pole-card"><div class="pole-code">${pole}</div><div class="pole-name">${escapeHtml(poleMeta[pole].name)}<br /><span style="color:#7c887c">${escapeHtml(poleMeta[pole].zh)}</span></div><div class="pole-score">${result.poleScores[pole]}<small> / 100</small></div></div>`).join("");
+}
+
+function renderCostCards(result) {
+  return Object.keys(poleMeta).map((pole) => {
+    const score = result.costScores?.[pole];
+    const recovery = result.costRecovery?.[pole];
+    return `<div class="pole-card cost-card"><div class="pole-code">${pole}</div><div class="pole-name">${escapeHtml(poleMeta[pole].zh)}<br /><span style="color:#7c887c">${score === null || score === undefined ? "未作答" : "高成本訊號"}</span></div><div class="pole-score">${score === null || score === undefined ? "—" : score}<small>${score === null || score === undefined ? "" : " / 100"}</small></div>${recovery ? `<div class="cost-recovery">恢復：${recovery}</div>` : ""}</div>`;
+  }).join("");
 }
 
 function renderFacetGroups(result) {
@@ -788,7 +890,8 @@ document.addEventListener("keydown", (event) => {
   if (state.view !== "quiz") return;
   if (/^[1-5]$/.test(event.key)) {
     const item = state.itemOrder[state.currentIndex];
-    if (item?.options[Number(event.key) - 1]) answerCurrent(item.options[Number(event.key) - 1].value);
+    if (item?.format === "behavior") answerCurrent(item.options.find((option) => option.key === event.key)?.value);
+    else if (item?.format === "forced_choice" || item?.format === "cost") answerCurrent(item.options[Number(event.key) - 1]?.value);
   }
   if (event.key === "Enter") moveNext();
   if (event.key === "ArrowLeft") movePrevious();

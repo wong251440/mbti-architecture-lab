@@ -110,6 +110,7 @@ h1, h2, h3, p { margin: 0; }
 .option-label { font-size: 13px; line-height: 1.5; }
 .option-key { font-family: "DM Mono", monospace; color: #869085; font-size: 11px; flex-shrink: 0; }
 .sim-step { border-top: 1px solid var(--line); margin-top: 22px; padding-top: 15px; }
+.sim-step.is-muted { opacity: .48; }
 .sim-step-label { display: flex; align-items: baseline; gap: 10px; color: var(--muted); font-size: 11px; letter-spacing: .03em; }
 .sim-step-label b { color: var(--ink); font-family: "DM Mono", monospace; font-size: 12px; }
 .sim-step .options { margin-top: 10px; padding-top: 0; }
@@ -155,6 +156,8 @@ h1, h2, h3, p { margin: 0; }
 .pole-name { font-size: 13px; margin-top: 10px; min-height: 36px; line-height: 1.4; }
 .pole-score { font-family: "DM Mono", monospace; font-size: 28px; margin-top: 13px; letter-spacing: -.08em; }
 .pole-score small { color: var(--muted); font-size: 11px; letter-spacing: 0; }
+.cost-card { min-height: 164px; }
+.cost-recovery { margin-top: 9px; color: var(--muted); font-size: 11px; }
 
 .facet-axis { border: 1px solid var(--line); background: var(--white); margin-bottom: 12px; }
 .facet-axis summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: 90px 1fr auto; align-items: center; gap: 14px; padding: 16px 18px; }
